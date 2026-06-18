@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Road to 70.3 — Training Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* playful palette (navy/blue/accent kept as aliases for legacy inline refs) */
+    --navy:#6a5cff; --blue:#22b8ff; --accent:#ff5d8f; --ink:#28304a; --muted:#8089a3;
+    --bg:#fdf4ff; --card:#ffffff; --line:#ece1f7;
+    --swim:#22b8ff; --bike:#2fd07a; --run:#ff8a3d; --strength:#9b6bff; --brick:#16c0ac; --rest:#aab4c8;
+    --sun:#ffce4a; --pink:#ff5d8f; --purple:#6a5cff; --good:#1fb96b;
+    --shadow:0 8px 22px rgba(106,92,255,.10),0 2px 6px rgba(40,48,74,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Fredoka",ui-rounded,"Segoe UI Rounded","SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fdf4ff,#eef4ff 55%,#fff3ea);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+  a{color:var(--purple)}
+  header{background:linear-gradient(120deg,#6a5cff 0%,#ff5d8f 55%,#ff9d3d 100%);color:#fff;padding:20px 22px 24px;border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+  header::after{content:"";position:absolute;right:-34px;top:-34px;width:170px;height:170px;background:rgba(255,255,255,.14);border-radius:50%}
+  header::before{content:"";position:absolute;left:-26px;bottom:-46px;width:130px;height:130px;background:rgba(255,255,255,.10);border-radius:50%}
+  .wrap{max-width:1080px;margin:0 auto;position:relative;z-index:1}
+  .htop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px}
+  .brand{font-weight:700;font-size:23px;letter-spacing:.2px;text-shadow:0 2px 0 rgba(0,0,0,.08)}
+  .brand small{display:block;font-weight:500;font-size:12px;opacity:.92;letter-spacing:0}
+  .countdown{text-align:right;background:rgba(255,255,255,.18);padding:8px 15px;border-radius:18px}
+  .countdown .num{font-size:30px;font-weight:700;line-height:1}
+  .countdown .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;opacity:.95}
+  .progwrap{margin-top:16px}
+  .progbar{height:12px;background:rgba(255,255,255,.28);border-radius:99px;overflow:hidden}
+  .progfill{height:100%;background:linear-gradient(90deg,#ffe14a,#2fd07a);width:0%;transition:width .5s;border-radius:99px}
+  .progmeta{display:flex;justify-content:space-between;font-size:12px;opacity:.97;margin-top:6px;font-weight:500}
+  nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;gap:6px;overflow-x:auto;padding:9px 4px}
+  .tab{padding:9px 16px;border:0;background:none;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:99px;white-space:nowrap;transition:.15s}
+  .tab:hover{background:#f3ecff;color:var(--purple)}
+  .tab.active{color:#fff;background:linear-gradient(120deg,#6a5cff,#ff5d8f);box-shadow:0 4px 10px rgba(106,92,255,.3)}
+  main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
+  .view{display:none}
+  .view.active{display:block;animation:fadein .3s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{border:2px solid var(--line);background:#fff;border-radius:99px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink);transition:.15s}
+  .btn:hover{transform:translateY(-1px);border-color:#d9c9f5}
+  .btn.primary{background:linear-gradient(120deg,#6a5cff,#ff5d8f);color:#fff;border-color:transparent}
+  .btn.small{padding:5px 12px;font-size:12px}
+  .btn.danger{color:#e0436b;border-color:#ffd2de}
+  .btn.confirming{background:#e0436b;color:#fff;border-color:#e0436b;animation:pulseC 1s ease-in-out infinite}
+  @keyframes pulseC{0%,100%{box-shadow:0 0 0 0 rgba(224,67,107,.45)}50%{box-shadow:0 0 0 5px rgba(224,67,107,0)}}
+  /* Plan */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  .pill{font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;color:#fff;display:inline-block;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  select,input,textarea{font-family:inherit;font-size:14px;border:2px solid var(--line);border-radius:12px;padding:8px 11px;background:#fff;color:var(--ink)}
+  select:focus,input:focus,textarea:focus{outline:none;border-color:var(--purple)}
+  .phasehead{margin:26px 0 12px;font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--purple);display:flex;align-items:center;gap:10px}
+  .phasehead .ln{flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,#e7dcff,transparent)}
+  .week{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:0;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden;transition:.2s}
+  .week:hover{border-color:#e2d4fb}
+  .week.current{border-color:var(--sun);box-shadow:0 0 0 3px #ffe9a8,var(--shadow)}
+  .whead{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none}
+  .whead:hover{background:#faf7ff}
+  .wnum{font-weight:700;font-size:15px;min-width:56px}
+  .wnum small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+  .wmeta{flex:1;min-width:0}
+  .wfocus{font-size:14px;color:var(--ink);font-weight:500}
+  .wsub{font-size:12px;color:var(--muted);margin-top:2px}
+  .wtarget{font-size:13px;color:var(--ink);line-height:1.6}
+  .wtarget b{font-weight:700}
+  .wtdim{color:#9aa3b2}
+  .whours{font-weight:700;font-size:15px;text-align:right;min-width:64px}
+  .whours small{display:block;font-weight:500;font-size:10px;color:var(--muted)}
+  .wprog{width:42px;height:42px;flex:none}
+  .chev{transition:transform .2s;color:var(--muted);flex:none}
+  .week.open .chev{transform:rotate(90deg)}
+  .wbody{display:none;padding:6px 16px 16px;border-top:2px dashed var(--line)}
+  .week.open .wbody{display:block}
+  .badgeflag{font-size:11px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:.5px}
+  .dot{width:10px;height:10px;border-radius:4px;flex:none}
+  input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:var(--purple)}
+  .keyrow{font-size:12.5px;color:var(--muted);margin:6px 2px 12px;background:#faf7ff;border:1px solid var(--line);border-radius:14px;padding:9px 13px;line-height:1.8}
+  .keyrow b{color:var(--ink)}
+  /* Day blocks */
+  .day{padding:10px 0 2px}
+  .dayhdr{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 8px}
+  .dayname{font-size:12.5px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px}
+  .dayswap{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px}
+  .dayswap select{font-size:11.5px;padding:3px 8px;border-radius:9px;cursor:pointer}
+  .dayitems{display:flex;flex-direction:column;gap:10px}
+  /* Scene tiles */
+  .tile{display:flex;align-items:center;gap:12px;padding:8px;border:2px solid var(--line);border-radius:16px;background:#fff;cursor:default;position:relative;overflow:hidden;transition:.18s}
+  .tile:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .tile.rest{background:#f7f9fc}
+  .tilescene{width:98px;height:64px;flex:none;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
+  .tiletext{flex:1;min-width:0}
+  .tilelabel{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3}
+  .tilesport{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .tilecheck{order:3;width:26px;height:26px;flex:none;margin:0 8px 0 2px;accent-color:var(--good);cursor:default}
+  .tilecheck:disabled{opacity:1}
+  .removeitem{order:4;flex:none;width:24px;height:24px;border:0;border-radius:50%;background:#fbe9ee;color:#d63a66;font-size:18px;line-height:1;font-weight:700;cursor:pointer;margin-left:2px;padding:0;transition:.15s}
+  .removeitem:hover{background:#f6c9d6}
+  .additem{margin-top:8px;border:1.5px dashed var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12px;border-radius:12px;padding:7px 12px;cursor:pointer;width:100%;transition:.15s}
+  .additem:hover{border-color:#d9c9f5;color:var(--purple);background:#faf7ff}
+  .typesel{order:1;flex:none;font-size:11px;font-weight:600;color:var(--muted);border:1.5px solid var(--line);border-radius:9px;padding:4px 6px;margin-right:4px;background:#fff;cursor:pointer;max-width:104px}
+  .typesel option.orig{text-decoration:underline;font-style:italic}
+  .typesel:hover{border-color:#d9c9f5}
+  .logbtn{order:2;flex:none;font-size:11.5px;font-weight:700;color:var(--purple);background:#f3ecff;border:0;border-radius:99px;padding:6px 12px;margin-right:4px;cursor:pointer;white-space:nowrap;transition:.15s}
+  .logbtn:hover{background:#e7dcff;transform:translateY(-1px)}
+  .logbtn.edit,.tile.done .logbtn{background:#e9f7ef;color:#1fb96b}
+  .logbtn.edit:hover,.tile.done .logbtn:hover{background:#d7f0e1}
+  .restbadge{order:2;font-size:11px;font-weight:700;color:var(--muted);background:#eef1f7;padding:4px 11px;border-radius:99px;margin-right:6px;white-space:nowrap}
+  .tile.done{border-color:#bff0d6;background:#f3fcf7}
+  .tile.done .tilescene{filter:saturate(.55) brightness(1.03)}
+  .tile.done .tilelabel{color:var(--muted)}
+  .sport-swim .tilesport{color:var(--swim)} .sport-bike .tilesport{color:var(--bike)} .sport-run .tilesport{color:var(--run)}
+  .sport-strength .tilesport{color:var(--strength)} .sport-brick .tilesport{color:var(--brick)} .sport-rest .tilesport{color:var(--rest)}
+  /* Animated scenes */
+  .scene{width:100%;height:100%;display:block}
+  .scene *{transform-box:fill-box}
+  @keyframes waveX{from{transform:translateX(0)}to{transform:translateX(-25px)}}
+  @keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+  @keyframes stroke{0%{transform:rotate(-45deg)}50%{transform:rotate(60deg)}100%{transform:rotate(-45deg)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes dashmove{to{stroke-dashoffset:-30}}
+  @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+  @keyframes legf{0%,100%{transform:rotate(30deg)}50%{transform:rotate(-30deg)}}
+  @keyframes legb{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(30deg)}}
+  @keyframes liftY{0%,100%{transform:translateY(5px)}50%{transform:translateY(-5px)}}
+  @keyframes zfloat{0%{transform:translateY(2px) scale(.8);opacity:0}25%{opacity:1}100%{transform:translateY(-15px) scale(1.1);opacity:0}}
+  @keyframes sunsp{to{transform:rotate(360deg)}}
+  .scene .wave{animation:waveX 2.4s linear infinite}
+  .scene .wave.f{animation-duration:1.6s}
+  .scene .swimmer{animation:bobY 1.5s ease-in-out infinite;transform-origin:center}
+  .scene .arm{animation:stroke 1s linear infinite;transform-origin:left center}
+  .scene .wheel{animation:spin .55s linear infinite;transform-origin:center}
+  .scene .lane{stroke-dasharray:8 7;animation:dashmove .45s linear infinite}
+  .scene .scn{animation:scrollX 1.3s linear infinite}
+  .scene .scn.s{animation-duration:2.2s}
+  .scene .legf{animation:legf .46s linear infinite;transform-origin:top center}
+  .scene .legb{animation:legb .46s linear infinite;transform-origin:top center}
+  .scene .runner,.scene .biker{animation:bobY .5s ease-in-out infinite;transform-origin:center}
+  .scene .bar{animation:liftY 1.5s ease-in-out infinite;transform-origin:center}
+  .scene .zz{animation:zfloat 2.6s ease-in-out infinite}
+  .scene .zz2{animation:zfloat 2.6s ease-in-out infinite;animation-delay:1.3s}
+  .scene .sunb{animation:sunsp 9s linear infinite;transform-origin:center}
+  @media(prefers-reduced-motion:reduce){.scene *{animation:none!important}}
+  /* Log + cards */
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+  .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:12px;font-weight:700;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .logsport{font-weight:700}
+  .logactions{white-space:nowrap}
+  .logactions .btn{margin-right:6px}
+  .empty{color:var(--muted);font-size:14px;padding:22px 4px;text-align:center}
+  /* stats + charts */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+  .stat{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;right:-14px;top:-14px;width:56px;height:56px;border-radius:50%;background:linear-gradient(120deg,rgba(106,92,255,.13),rgba(255,93,143,.13))}
+  .stat .v{font-size:28px;font-weight:700;color:var(--purple)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin:6px 2px 12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .chartbox{overflow-x:auto}
+  svg{display:block}
+  .tests td input{width:100%}
+  .tests th:first-child,.tests td:first-child{font-weight:600}
+  .note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.65}
+  .savetag{font-size:12px;color:var(--good);font-weight:700;opacity:0;transition:opacity .3s}
+  .savetag.show{opacity:1}
+  strong{color:var(--ink)}
+  /* Home illustrated KPI cards */
+  .homewrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-top:4px}
+  .hcard{background:var(--card);border:2px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow);transition:.18s}
+  .hcard:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(106,92,255,.18)}
+  .hscene{height:128px;width:100%;overflow:hidden;border-bottom:2px solid var(--line)}
+  .hscene .scene{width:100%;height:100%}
+  .hbody{padding:13px 15px 15px}
+  .htitle{font-size:21px;font-weight:800;margin-bottom:11px;letter-spacing:.2px}
+  .sport-swim .htitle{color:#1f95da}.sport-bike .htitle{color:#23b56a}.sport-run .htitle{color:#ef7c1f}.sport-strength .htitle{color:#7d4fe6}
+  .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .kgrid.k3{grid-template-columns:repeat(3,1fr)}
+  .envsplit{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center}
+  .envsplit strong{color:var(--ink)}
+  .kpi{background:#f7f7fd;border-radius:14px;padding:11px 6px;text-align:center}
+  .kpi .kv{font-size:18px;font-weight:800;color:var(--ink);line-height:1.05;white-space:nowrap}
+  .kpi .kv small{font-size:11px;font-weight:700;color:var(--muted);margin-left:1px}
+  .kpi .kl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:4px}
+  /* dashboard period selector */
+  .periodbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:var(--shadow)}
+  .periodbar .plabel{font-size:13px;font-weight:700;color:var(--muted)}
+  .periodbar select{font-size:13px;padding:7px 10px}
+  .periodbar #d_range{margin-left:auto}
+  /* planned-distance progress bar */
+  .distbar{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .distbar-top{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:5px}
+  .distbar-track{height:12px;background:#eef0f7;border-radius:99px;overflow:hidden}
+  .distbar-fill{height:100%;width:0;border-radius:99px;transition:width .5s ease;background:var(--purple)}
+  .sport-swim .distbar-fill{background:linear-gradient(90deg,#3fc0ff,#1f95da)}
+  .sport-bike .distbar-fill{background:linear-gradient(90deg,#4ce08a,#23b56a)}
+  .sport-run .distbar-fill{background:linear-gradient(90deg,#ffb14a,#ef7c1f)}
+  .distbar-foot{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .distbar-foot .est{font-style:italic}
+  /* Dashboard "more stats" expander */
+  .morebtn{margin-top:12px;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--purple);font-weight:700;font-size:12px;cursor:pointer;padding:9px 6px 2px;display:flex;align-items:center;justify-content:center;gap:5px}
+  .morebtn .mchev{display:inline-block;transition:transform .2s}
+  .morebtn.open .mchev{transform:rotate(180deg)}
+  .morestats{display:none;margin-top:8px}
+  .morestats.open{display:block}
+  .mssec{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:4px 2px 7px}
+  .mschips{display:flex;gap:8px;margin-bottom:12px}
+  .mschip{flex:1;background:#faf7ff;border:1px solid var(--line);border-radius:12px;padding:9px 4px;text-align:center}
+  .mcv{font-size:17px;font-weight:800;color:var(--ink)}
+  .mcv small{font-size:10px;font-weight:600;color:var(--muted)}
+  .mcl{font-size:10.5px;color:var(--muted);margin-top:3px}
+  .mstable{display:flex;flex-direction:column}
+  .msr{display:flex;align-items:center;font-size:12.5px;padding:6px 8px;border-radius:8px}
+  .msr:nth-child(odd){background:#faf7ff}
+  .mshdr{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:none!important;padding-bottom:2px}
+  .msl{flex:1;color:var(--muted);font-weight:600}
+  .msd,.mst{width:88px;text-align:right;font-weight:700;color:var(--ink)}
+  .msempty{font-size:12px;color:var(--muted);text-align:center;padding:6px 0 2px}
+  /* Settings gear + modal */
+  #gear{margin-left:auto;flex:none;background:#f3ecff;border:0;color:var(--purple);font-size:18px;width:38px;height:38px;border-radius:50%;cursor:pointer;line-height:1;transition:.2s}
+  #gear:hover{background:#e7dcff;transform:rotate(40deg)}
+  .modal{display:none;position:fixed;inset:0;background:rgba(30,24,60,.5);z-index:60;padding:22px;overflow-y:auto}
+  .modal.open{display:flex;align-items:flex-start;justify-content:center}
+  .modalcard{background:#f5f6fc;border-radius:24px;max-width:640px;width:100%;padding:20px;margin:auto;box-shadow:0 24px 60px rgba(0,0,0,.32)}
+  .modalhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .modalhead strong{font-size:18px}
+  .modalx{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;color:var(--muted);padding:0 4px}
+  .modalx:hover{color:var(--ink)}
+  @media(max-width:560px){.whours{min-width:52px}.wnum{min-width:46px}.tilescene{width:80px;height:58px}.brand{font-size:20px}.kpi .kv{font-size:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div class="brand">Road to 70.3 <small>IRONMAN 70.3 La Quinta · Training Tracker</small></div>
+      <div class="countdown"><div class="num" id="cd">—</div><div class="lbl">days to race day</div></div>
+    </div>
+    <div class="progwrap">
+      <div class="progbar"><div class="progfill" id="ovfill"></div></div>
+      <div class="progmeta"><span id="ovleft">—</span><span id="ovright">Race: Sun 5 Dec 2027</span></div>
+    </div>
+  </div>
+</header>
+<nav><div class="wrap">
+  <button class="tab active" data-v="home">Dashboard</button>
+  <button class="tab" data-v="plan">Plan</button>
+  <button id="gear" title="Settings · sync &amp; backup" aria-label="Settings, sync and backup">&#9881;</button>
+</div></nav>
+<main>
+  <!-- PLAN -->
+  <section class="view" id="plan">
+    <div class="toolbar">
+      <button class="btn primary small" id="jumpcur">Jump to this week</button>
+      <select id="phasefilter">
+        <option value="all">All phases</option>
+        <option>Foundation</option><option>Base</option>
+        <option>Build &amp; Integrate</option><option>Peak</option><option>Taper &amp; Race</option>
+      </select>
+    </div>
+    <div id="weeks"></div>
+  </section>
+  <!-- DASHBOARD -->
+  <section class="view active" id="home">
+    <div class="periodbar">
+      <span class="plabel">Stats shown for</span>
+      <select id="d_mode">
+        <option value="total">Whole plan (total)</option>
+        <option value="week" selected>A week</option>
+        <option value="month">A month</option>
+      </select>
+      <select id="d_week" style="display:none"></select>
+      <select id="d_month" style="display:none"></select>
+      <span id="d_range" class="note"></span>
+    </div>
+    <div id="homecards" class="homewrap"></div>
+    <p class="note" id="homenote" style="text-align:center;margin-top:6px"></p>
+  </section>
+</main>
+
+<!-- SETTINGS / SYNC / BACKUP (opened from the gear button) -->
+<div class="modal" id="settings">
+  <div class="modalcard">
+    <div class="modalhead"><strong>Settings · Sync &amp; Backup</strong><button class="modalx" id="closemodal" aria-label="Close">&times;</button></div>
+    <div class="card">
+      <strong>Backup &amp; restore</strong>
+      <p class="note">Your progress is saved automatically in this browser. Use these to move it to another device or keep a safe copy.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="export">Export my data</button>
+        <button class="btn" id="importbtn">Import data</button>
+        <input type="file" id="importfile" accept="application/json" style="display:none">
+        <button class="btn danger" id="reset">Reset everything</button>
+      </div>
+      <p class="note" id="datamsg"></p>
+    </div>
+    <div class="card">
+      <strong>Cloud sync across your devices</strong>
+      <p class="note">Connect a free Supabase database so this tracker shows the <em>same</em> data on your phone, laptop and tablet. Paste the two values from your Supabase project below and press Connect. Leave blank to stay on this device only. Status: <strong id="syncstat2">Local only</strong>.</p>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <input id="sb_url" placeholder="Project URL  (e.g. https://abcd.supabase.co)">
+        <input id="sb_key" placeholder="anon public key (a long string starting with eyJ...)">
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="sb_save">Connect / Save</button>
+        <button class="btn" id="sb_sync">Sync now</button>
+        <button class="btn danger" id="sb_clear">Disconnect</button>
+      </div>
+      <p class="note" id="sbmsg"></p>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <strong>About</strong>
+      <p class="note">A self-contained tracker for your 18-month IRONMAN 70.3 La Quinta plan (77 weeks, 15 Jun 2026 → 5 Dec 2027). Your check-offs and workouts are saved automatically in this browser and stay between visits. They're stored per-browser and per-device, so to keep a safe copy or move to another device, use <strong>Export</strong> above. Confirm the race date when 2027 registration opens.</p>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK LOG (opened from a plan tile) -->
+<div class="modal" id="qlog">
+  <div class="modalcard" style="max-width:560px">
+    <div class="modalhead"><strong id="ql_title">Log workout</strong><button class="modalx" id="ql_close" aria-label="Close">&times;</button></div>
+    <p class="note" id="ql_sub" style="margin-top:-6px"></p>
+    <div class="card" style="margin-bottom:0">
+      <div class="formgrid">
+        <div class="fld" id="ql_sportfld" style="display:none"><label>Sport</label><select id="ql_sport">
+          <option value="swim">Swim</option><option value="bike">Bike</option><option value="run">Run</option>
+          <option value="strength">Strength</option><option value="brick">Brick</option></select></div>
+        <div class="fld"><label>Date</label><input type="date" id="ql_date"></div>
+        <div class="fld"><label>Duration (min)</label><input type="number" id="ql_dur" min="0" step="5" placeholder="e.g. 60"></div>
+        <div class="fld"><label>Distance</label><input type="number" id="ql_dist" min="0" step="0.1" placeholder="optional"></div>
+        <div class="fld"><label>Unit</label><select id="ql_unit"><option>mi</option><option>km</option><option>m</option><option>yd</option></select></div>
+        <div class="fld" id="ql_envfld"><label>Environment</label><select id="ql_env"><option>Outdoor</option><option>Indoor</option></select></div>
+        <div class="fld" id="ql_elevfld"><label>Elevation gain</label><input type="number" id="ql_elev" min="0" step="1" placeholder="optional"></div>
+        <div class="fld" id="ql_elevunitfld"><label>Elev. unit</label><select id="ql_elevunit"><option>ft</option><option>m</option></select></div>
+        <div class="fld"><label>Effort</label><select id="ql_effort">
+          <option>Easy (Z1&#8211;2)</option><option>Tempo (Z3)</option><option>Threshold (Z4)</option><option>Hard (Z5)</option></select></div>
+        <div class="fld" style="grid-column:1/-1"><label>Notes</label><input type="text" id="ql_notes" placeholder="How did it feel? Fuel? Anything to remember&#8230;"></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" id="ql_save">Save &amp; check off &#10003;</button>
+        <button class="btn" id="ql_cancel">Cancel</button>
+        <button class="btn danger" id="ql_delete" style="display:none;margin-left:auto">Delete this workout</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const PLAN = {"start":"2026-06-15","race":"2027-12-05","nWeeks":77,"weekdays":["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],"phases":["Foundation","Base","Build & Integrate","Peak","Taper & Race"],"paces":{"Foundation":{"run_min_km":8.0,"bike_kmh":20},"Base":{"run_min_km":7.25,"bike_kmh":23},"Build & Integrate":{"run_min_km":6.75,"bike_kmh":26},"Peak":{"run_min_km":6.5,"bike_kmh":28},"Taper & Race":{"run_min_km":6.5,"bike_kmh":28}},"weeks":[{"n":1,"weekOf":"2026-06-15","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.25,"run":2.0,"strength":2.0,"brick":0.0,"total":8.75},"dist":{"run_km":14.5,"run_mi":9.0,"bike_km":64,"bike_mi":40.0},"focus":"START — learn freestyle technique; run/walk method; pro bike fit. Build the habit.","key":"Long easy ride (skills) + longest run/walk","milestone":true,"deload":false,"days":[[{"label":"Zone 2 short run 40 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 75 min","sport":"run"}],[{"label":"Long bike 135 min","sport":"bike"}]]},{"n":2,"weekOf":"2026-06-22","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.25,"run":2.0,"strength":2.0,"brick":0.0,"total":8.75},"dist":{"run_km":14.8,"run_mi":9.2,"bike_km":65,"bike_mi":40.7},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 40 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 80 min","sport":"run"}],[{"label":"Long bike 135 min","sport":"bike"}]]},{"n":3,"weekOf":"2026-06-29","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.25,"run":2.0,"strength":2.0,"brick":0.0,"total":8.75},"dist":{"run_km":15.1,"run_mi":9.4,"bike_km":67,"bike_mi":41.3},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 45 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 75 min","sport":"run"}],[{"label":"Long bike 140 min","sport":"bike"}]]},{"n":4,"weekOf":"2026-07-06","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.0,"strength":2.0,"brick":0.0,"total":9.0},"dist":{"run_km":15.4,"run_mi":9.6,"bike_km":68,"bike_mi":42.0},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 45 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 80 min","sport":"run"}],[{"label":"Long bike 145 min","sport":"bike"}]]},{"n":5,"weekOf":"2026-07-13","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.0,"strength":2.0,"brick":0.0,"total":9.0},"dist":{"run_km":15.8,"run_mi":9.8,"bike_km":69,"bike_mi":42.7},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 45 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 80 min","sport":"run"}],[{"label":"Long bike 145 min","sport":"bike"}]]},{"n":6,"weekOf":"2026-07-20","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.25,"strength":2.0,"brick":0.0,"total":9.25},"dist":{"run_km":16.1,"run_mi":10.0,"bike_km":70,"bike_mi":43.3},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 45 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 85 min","sport":"run"}],[{"label":"Long bike 150 min","sport":"bike"}]]},{"n":7,"weekOf":"2026-07-27","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.25,"strength":2.0,"brick":0.0,"total":9.25},"dist":{"run_km":16.4,"run_mi":10.2,"bike_km":71,"bike_mi":44.0},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 50 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 80 min","sport":"run"}],[{"label":"Long bike 150 min","sport":"bike"}]]},{"n":8,"weekOf":"2026-08-03","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.25,"strength":2.0,"brick":0.0,"total":9.25},"dist":{"run_km":16.7,"run_mi":10.4,"bike_km":72,"bike_mi":44.7},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 50 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 85 min","sport":"run"}],[{"label":"Long bike 155 min","sport":"bike"}]]},{"n":9,"weekOf":"2026-08-10","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.25,"strength":2.0,"brick":0.0,"total":9.5},"dist":{"run_km":17.1,"run_mi":10.6,"bike_km":73,"bike_mi":45.3},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 50 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 85 min","sport":"run"}],[{"label":"Long bike 160 min","sport":"bike"}]]},{"n":10,"weekOf":"2026-08-17","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.25,"strength":2.0,"brick":0.0,"total":9.5},"dist":{"run_km":17.4,"run_mi":10.8,"bike_km":74,"bike_mi":46.0},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 50 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 90 min","sport":"run"}],[{"label":"Long bike 160 min","sport":"bike"}]]},{"n":11,"weekOf":"2026-08-24","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.25,"strength":2.0,"brick":0.0,"total":9.5},"dist":{"run_km":17.7,"run_mi":11.0,"bike_km":75,"bike_mi":46.7},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 55 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 85 min","sport":"run"}],[{"label":"Long bike 165 min","sport":"bike"}]]},{"n":12,"weekOf":"2026-08-31","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.5,"strength":2.0,"brick":0.0,"total":9.75},"dist":{"run_km":18.0,"run_mi":11.2,"bike_km":76,"bike_mi":47.3},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 55 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 90 min","sport":"run"}],[{"label":"Long bike 170 min","sport":"bike"}]]},{"n":13,"weekOf":"2026-09-07","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.5,"strength":2.0,"brick":0.0,"total":9.75},"dist":{"run_km":18.3,"run_mi":11.4,"bike_km":77,"bike_mi":48.0},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 55 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 90 min","sport":"run"}],[{"label":"Long bike 170 min","sport":"bike"}]]},{"n":14,"weekOf":"2026-09-14","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":2.0,"brick":0.0,"total":10.0},"dist":{"run_km":18.7,"run_mi":11.6,"bike_km":78,"bike_mi":48.7},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 55 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 95 min","sport":"run"}],[{"label":"Long bike 175 min","sport":"bike"}]]},{"n":15,"weekOf":"2026-09-21","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":2.0,"brick":0.0,"total":10.0},"dist":{"run_km":19.0,"run_mi":11.8,"bike_km":79,"bike_mi":49.3},"focus":"Skill + easy aerobic. Form over effort in all three sports.","key":"Long easy ride (skills) + longest run/walk","milestone":false,"deload":false,"days":[[{"label":"Zone 2 short run 60 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 90 min","sport":"run"}],[{"label":"Long bike 180 min","sport":"bike"}]]},{"n":16,"weekOf":"2026-09-28","phase":"Foundation","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":2.0,"brick":0.0,"total":10.0},"dist":{"run_km":19.3,"run_mi":12.0,"bike_km":80,"bike_mi":50.0},"focus":"Recovery + skills test: time-trial swim/bike/run to set your baseline.","key":"Long easy ride (skills) + longest run/walk","milestone":true,"deload":false,"days":[[{"label":"Zone 2 short run 60 min","sport":"run"}],[{"label":"Mixed strength 40 min","sport":"strength"},{"label":"Swim 30 min technique","sport":"swim"}],[{"label":"Upper-body strength 40 min","sport":"strength"},{"label":"Bike 60 min Zone 2","sport":"bike"}],[{"label":"Leg strength 40 min","sport":"strength"},{"label":"Swim 60 min","sport":"swim"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Zone 2 long run 95 min","sport":"run"}],[{"label":"Long bike 180 min","sport":"bike"}]]},{"n":17,"weekOf":"2026-10-05","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.5,"strength":1.5,"brick":0.0,"total":9.0},"dist":{"run_km":19.3,"run_mi":12.0,"bike_km":80,"bike_mi":50.0},"focus":"BASE phase begins — build continuous swim distance & long ride/run.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":true,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 30 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 30 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 30 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 115 min","sport":"bike"}],[{"label":"Long run 85 min","sport":"run"}]]},{"n":18,"weekOf":"2026-10-12","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":3.5,"run":2.5,"strength":1.5,"brick":0.0,"total":9.0},"dist":{"run_km":19.7,"run_mi":12.2,"bike_km":82,"bike_mi":51.1},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 30 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 30 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 30 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 120 min","sport":"bike"}],[{"label":"Long run 85 min","sport":"run"}]]},{"n":19,"weekOf":"2026-10-19","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.5,"strength":1.5,"brick":0.0,"total":9.25},"dist":{"run_km":20.0,"run_mi":12.4,"bike_km":84,"bike_mi":52.1},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 120 min","sport":"bike"}],[{"label":"Long run 85 min","sport":"run"}]]},{"n":20,"weekOf":"2026-10-26","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.5,"strength":1.5,"brick":0.0,"total":9.25},"dist":{"run_km":20.3,"run_mi":12.6,"bike_km":86,"bike_mi":53.2},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 125 min","sport":"bike"}],[{"label":"Long run 90 min","sport":"run"}]]},{"n":21,"weekOf":"2026-11-02","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":3.75,"run":2.5,"strength":1.5,"brick":0.0,"total":9.25},"dist":{"run_km":20.7,"run_mi":12.8,"bike_km":87,"bike_mi":54.2},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 125 min","sport":"bike"}],[{"label":"Long run 90 min","sport":"run"}]]},{"n":22,"weekOf":"2026-11-09","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":1.5,"brick":0.0,"total":9.5},"dist":{"run_km":21.0,"run_mi":13.1,"bike_km":89,"bike_mi":55.3},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 130 min","sport":"bike"}],[{"label":"Long run 90 min","sport":"run"}]]},{"n":23,"weekOf":"2026-11-16","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":1.5,"brick":0.0,"total":9.5},"dist":{"run_km":21.3,"run_mi":13.3,"bike_km":91,"bike_mi":56.3},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 130 min","sport":"bike"}],[{"label":"Long run 95 min","sport":"run"}]]},{"n":24,"weekOf":"2026-11-23","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":1.5,"brick":0.0,"total":9.5},"dist":{"run_km":21.7,"run_mi":13.5,"bike_km":92,"bike_mi":57.4},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 130 min","sport":"bike"}],[{"label":"Long run 95 min","sport":"run"}]]},{"n":25,"weekOf":"2026-11-30","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.0,"run":2.5,"strength":1.5,"brick":0.0,"total":9.5},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":94,"bike_mi":58.4},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 35 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 135 min","sport":"bike"}],[{"label":"Long run 95 min","sport":"run"}]]},{"n":26,"weekOf":"2026-12-07","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.25,"run":2.5,"strength":1.5,"brick":0.0,"total":9.75},"dist":{"run_km":22.4,"run_mi":13.9,"bike_km":96,"bike_mi":59.5},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 135 min","sport":"bike"}],[{"label":"Long run 95 min","sport":"run"}]]},{"n":27,"weekOf":"2026-12-14","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.25,"run":2.75,"strength":1.5,"brick":0.0,"total":10.0},"dist":{"run_km":22.7,"run_mi":14.1,"bike_km":97,"bike_mi":60.5},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 140 min","sport":"bike"}],[{"label":"Long run 100 min","sport":"run"}]]},{"n":28,"weekOf":"2026-12-21","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.25,"run":2.75,"strength":1.5,"brick":0.0,"total":10.0},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":99,"bike_mi":61.6},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 140 min","sport":"bike"}],[{"label":"Long run 100 min","sport":"run"}]]},{"n":29,"weekOf":"2026-12-28","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.5,"run":3.0,"strength":1.5,"brick":0.0,"total":10.5},"dist":{"run_km":23.4,"run_mi":14.5,"bike_km":101,"bike_mi":62.6},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 145 min","sport":"bike"}],[{"label":"Long run 100 min","sport":"run"}]]},{"n":30,"weekOf":"2027-01-04","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.5,"run":2.75,"strength":1.5,"brick":0.0,"total":10.25},"dist":{"run_km":23.7,"run_mi":14.7,"bike_km":102,"bike_mi":63.7},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 20 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 145 min","sport":"bike"}],[{"label":"Long run 105 min","sport":"run"}]]},{"n":31,"weekOf":"2027-01-11","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.5,"run":3.0,"strength":1.5,"brick":0.0,"total":10.5},"dist":{"run_km":24.1,"run_mi":14.9,"bike_km":104,"bike_mi":64.7},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 150 min","sport":"bike"}],[{"label":"Long run 105 min","sport":"run"}]]},{"n":32,"weekOf":"2027-01-18","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.5,"run":3.0,"strength":1.5,"brick":0.0,"total":10.5},"dist":{"run_km":24.4,"run_mi":15.2,"bike_km":106,"bike_mi":65.8},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 150 min","sport":"bike"}],[{"label":"Long run 105 min","sport":"run"}]]},{"n":33,"weekOf":"2027-01-25","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.5,"run":3.0,"strength":1.5,"brick":0.0,"total":10.5},"dist":{"run_km":24.7,"run_mi":15.4,"bike_km":108,"bike_mi":66.8},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 40 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 155 min","sport":"bike"}],[{"label":"Long run 110 min","sport":"run"}]]},{"n":34,"weekOf":"2027-02-01","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":4.75,"run":3.0,"strength":1.5,"brick":0.0,"total":10.75},"dist":{"run_km":25.1,"run_mi":15.6,"bike_km":109,"bike_mi":67.9},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 155 min","sport":"bike"}],[{"label":"Long run 110 min","sport":"run"}]]},{"n":35,"weekOf":"2027-02-08","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":5.0,"run":3.0,"strength":1.5,"brick":0.0,"total":11.0},"dist":{"run_km":25.4,"run_mi":15.8,"bike_km":111,"bike_mi":68.9},"focus":"Three midweek bricks (bike→run) + long weekend ride & run. Build steady aerobic volume.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 160 min","sport":"bike"}],[{"label":"Long run 110 min","sport":"run"}]]},{"n":36,"weekOf":"2027-02-15","phase":"Base","block":"Build","hours":{"swim":1.5,"bike":5.0,"run":3.0,"strength":1.5,"brick":0.0,"total":11.0},"dist":{"run_km":25.7,"run_mi":16.0,"bike_km":113,"bike_mi":70.0},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Midweek bricks (bike→run) + weekend long ride & run","milestone":false,"deload":false,"days":[[{"label":"Rest day","sport":"rest"}],[{"label":"Upper-body strength 45 min","sport":"strength"},{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Lower-body strength 45 min","sport":"strength"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Swim 45 min","sport":"swim"},{"label":"Brick: bike 45 min → run 25 min","sport":"brick"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Long ride 160 min","sport":"bike"}],[{"label":"Long run 110 min","sport":"run"}]]},{"n":37,"weekOf":"2027-02-22","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":3.5,"run":2.25,"strength":0.75,"brick":1.0,"total":9.5},"dist":{"run_km":20.0,"run_mi":12.4,"bike_km":91,"bike_mi":56.5},"focus":"INTEGRATION begins — add ONE weekly brick (bike then short run).","key":"Weekend brick: long ride → transition run","milestone":true,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":38,"weekOf":"2027-03-01","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":3.75,"run":2.25,"strength":0.75,"brick":1.0,"total":9.75},"dist":{"run_km":20.0,"run_mi":12.4,"bike_km":98,"bike_mi":60.9},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":39,"weekOf":"2027-03-08","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":3.75,"run":2.25,"strength":0.75,"brick":1.0,"total":9.75},"dist":{"run_km":20.0,"run_mi":12.4,"bike_km":98,"bike_mi":60.9},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":40,"weekOf":"2027-03-15","phase":"Build & Integrate","block":"Recovery","hours":{"swim":1.25,"bike":2.5,"run":1.5,"strength":0.5,"brick":0.75,"total":6.5},"dist":{"run_km":13.5,"run_mi":8.4,"bike_km":65,"bike_mi":40.4},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":41,"weekOf":"2027-03-22","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":3.75,"run":2.5,"strength":0.75,"brick":1.0,"total":10.0},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":98,"bike_mi":60.9},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":42,"weekOf":"2027-03-29","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":3.75,"run":2.5,"strength":0.75,"brick":1.0,"total":10.0},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":98,"bike_mi":60.9},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":43,"weekOf":"2027-04-05","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":3.75,"run":2.5,"strength":0.75,"brick":1.0,"total":10.0},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":98,"bike_mi":60.9},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":44,"weekOf":"2027-04-12","phase":"Build & Integrate","block":"Recovery","hours":{"swim":1.25,"bike":2.5,"run":1.5,"strength":0.5,"brick":0.75,"total":6.5},"dist":{"run_km":13.5,"run_mi":8.4,"bike_km":65,"bike_mi":40.4},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":45,"weekOf":"2027-04-19","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":4.0,"run":2.5,"strength":0.75,"brick":1.25,"total":10.5},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":104,"bike_mi":64.6},"focus":"Open-water swim practice begins (wetsuit, sighting).","key":"Weekend brick: long ride → transition run","milestone":true,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":46,"weekOf":"2027-04-26","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":4.0,"run":2.5,"strength":0.75,"brick":1.25,"total":10.5},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":104,"bike_mi":64.6},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":47,"weekOf":"2027-05-03","phase":"Build & Integrate","block":"Build","hours":{"swim":2.0,"bike":4.0,"run":2.5,"strength":0.75,"brick":1.25,"total":10.5},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":104,"bike_mi":64.6},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":48,"weekOf":"2027-05-10","phase":"Build & Integrate","block":"Recovery","hours":{"swim":1.5,"bike":2.75,"run":1.75,"strength":0.5,"brick":0.75,"total":7.25},"dist":{"run_km":15.5,"run_mi":9.6,"bike_km":72,"bike_mi":44.7},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":49,"weekOf":"2027-05-17","phase":"Build & Integrate","block":"Build","hours":{"swim":2.25,"bike":4.0,"run":2.5,"strength":0.75,"brick":1.25,"total":10.75},"dist":{"run_km":22.0,"run_mi":13.7,"bike_km":104,"bike_mi":64.6},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":50,"weekOf":"2027-05-24","phase":"Build & Integrate","block":"Build","hours":{"swim":2.25,"bike":4.25,"run":2.75,"strength":0.75,"brick":1.25,"total":11.25},"dist":{"run_km":24.5,"run_mi":15.2,"bike_km":110,"bike_mi":68.4},"focus":"TUNE-UP RACE: enter a Sprint triathlon to rehearse logistics.","key":"Weekend brick: long ride → transition run","milestone":true,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":51,"weekOf":"2027-05-31","phase":"Build & Integrate","block":"Build","hours":{"swim":2.25,"bike":4.25,"run":2.75,"strength":0.75,"brick":1.25,"total":11.25},"dist":{"run_km":24.5,"run_mi":15.2,"bike_km":110,"bike_mi":68.4},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":52,"weekOf":"2027-06-07","phase":"Build & Integrate","block":"Recovery","hours":{"swim":1.5,"bike":2.75,"run":1.75,"strength":0.5,"brick":0.75,"total":7.25},"dist":{"run_km":15.5,"run_mi":9.6,"bike_km":72,"bike_mi":44.7},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":53,"weekOf":"2027-06-14","phase":"Build & Integrate","block":"Build","hours":{"swim":2.25,"bike":4.25,"run":2.75,"strength":0.75,"brick":1.25,"total":11.25},"dist":{"run_km":24.5,"run_mi":15.2,"bike_km":110,"bike_mi":68.4},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":54,"weekOf":"2027-06-21","phase":"Build & Integrate","block":"Build","hours":{"swim":2.25,"bike":4.25,"run":2.75,"strength":0.75,"brick":1.25,"total":11.25},"dist":{"run_km":24.5,"run_mi":15.2,"bike_km":110,"bike_mi":68.4},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":55,"weekOf":"2027-06-28","phase":"Build & Integrate","block":"Build","hours":{"swim":2.25,"bike":4.25,"run":2.75,"strength":0.75,"brick":1.25,"total":11.25},"dist":{"run_km":24.5,"run_mi":15.2,"bike_km":110,"bike_mi":68.4},"focus":"Add tempo/threshold + weekly brick. Practise fuelling.","key":"Weekend brick: long ride → transition run","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike intervals 60–75 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60 min + easy run 40 min","sport":"swim"}],[{"label":"Run tempo 50–60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"BRICK: long bike 2–3 h → run 15–30 min","sport":"brick"}],[{"label":"Long run 75–90 min easy","sport":"run"}]]},{"n":56,"weekOf":"2027-07-05","phase":"Peak","block":"Recovery","hours":{"swim":1.25,"bike":2.75,"run":1.5,"strength":0.25,"brick":1.0,"total":6.75},"dist":{"run_km":14.0,"run_mi":8.7,"bike_km":77,"bike_mi":47.8},"focus":"PEAK phase — race-specific bricks; dial in race-day nutrition.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":true,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":57,"weekOf":"2027-07-12","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.25,"run":2.5,"strength":0.5,"brick":1.5,"total":10.75},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":119,"bike_mi":73.9},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":58,"weekOf":"2027-07-19","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.25,"run":2.5,"strength":0.5,"brick":1.5,"total":10.75},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":119,"bike_mi":73.9},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":59,"weekOf":"2027-07-26","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.25,"run":2.5,"strength":0.5,"brick":1.5,"total":10.75},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":119,"bike_mi":73.9},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":60,"weekOf":"2027-08-02","phase":"Peak","block":"Recovery","hours":{"swim":1.25,"bike":2.75,"run":1.75,"strength":0.25,"brick":1.0,"total":7.0},"dist":{"run_km":16.0,"run_mi":9.9,"bike_km":77,"bike_mi":47.8},"focus":"Recovery week — easy aerobic only; prioritise sleep & technique.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":61,"weekOf":"2027-08-09","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.5,"run":2.5,"strength":0.5,"brick":1.5,"total":11.0},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":126,"bike_mi":78.3},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":62,"weekOf":"2027-08-16","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.5,"run":2.5,"strength":0.5,"brick":1.5,"total":11.0},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":126,"bike_mi":78.3},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":63,"weekOf":"2027-08-23","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.5,"run":2.5,"strength":0.5,"brick":1.5,"total":11.0},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":126,"bike_mi":78.3},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":64,"weekOf":"2027-08-30","phase":"Peak","block":"Recovery","hours":{"swim":1.25,"bike":3.0,"run":1.75,"strength":0.25,"brick":1.0,"total":7.25},"dist":{"run_km":16.0,"run_mi":9.9,"bike_km":84,"bike_mi":52.2},"focus":"TUNE-UP RACE: Olympic-distance triathlon (dress rehearsal).","key":"Race-specific brick: race-pace ride + run off the bike","milestone":true,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":65,"weekOf":"2027-09-06","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.5,"run":2.5,"strength":0.5,"brick":1.5,"total":11.0},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":126,"bike_mi":78.3},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":66,"weekOf":"2027-09-13","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.5,"run":2.75,"strength":0.5,"brick":1.5,"total":11.25},"dist":{"run_km":25.5,"run_mi":15.8,"bike_km":126,"bike_mi":78.3},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":67,"weekOf":"2027-09-20","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.75,"run":2.75,"strength":0.5,"brick":1.5,"total":11.5},"dist":{"run_km":25.5,"run_mi":15.8,"bike_km":133,"bike_mi":82.6},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":68,"weekOf":"2027-09-27","phase":"Peak","block":"Recovery","hours":{"swim":1.25,"bike":3.0,"run":1.75,"strength":0.5,"brick":1.0,"total":7.5},"dist":{"run_km":16.0,"run_mi":9.9,"bike_km":84,"bike_mi":52.2},"focus":"HALF-DISTANCE SIMULATION: ~75% of race volume this weekend.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":true,"deload":true,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":69,"weekOf":"2027-10-04","phase":"Peak","block":"Build","hours":{"swim":2.0,"bike":4.75,"run":2.75,"strength":0.5,"brick":1.75,"total":11.75},"dist":{"run_km":25.5,"run_mi":15.8,"bike_km":133,"bike_mi":82.6},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":70,"weekOf":"2027-10-11","phase":"Peak","block":"Build","hours":{"swim":2.25,"bike":4.75,"run":2.75,"strength":0.5,"brick":1.75,"total":12.0},"dist":{"run_km":25.5,"run_mi":15.8,"bike_km":133,"bike_mi":82.6},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":71,"weekOf":"2027-10-18","phase":"Peak","block":"Build","hours":{"swim":2.25,"bike":4.75,"run":2.75,"strength":0.5,"brick":1.75,"total":12.0},"dist":{"run_km":25.5,"run_mi":15.8,"bike_km":133,"bike_mi":82.6},"focus":"Race-pace efforts, long brick, OW swim. Rehearse race day.","key":"Race-specific brick: race-pace ride + run off the bike","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike race-pace intervals 75–90 min + short swim","sport":"bike"},{"label":"Upper-body strength 40 min","sport":"strength"}],[{"label":"Swim 60–75 min + easy run 40 min","sport":"swim"}],[{"label":"Run threshold 60 min","sport":"run"},{"label":"Lower-body strength 40 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"RACE BRICK: bike 3–3.5 h → run 30–45 min","sport":"brick"}],[{"label":"Long run 90–120 min (fuel practice)","sport":"run"}]]},{"n":72,"weekOf":"2027-10-25","phase":"Taper & Race","block":"Taper","hours":{"swim":1.75,"bike":3.5,"run":2.5,"strength":0.5,"brick":1.0,"total":9.25},"dist":{"run_km":23.0,"run_mi":14.3,"bike_km":98,"bike_mi":60.9},"focus":"TAPER begins — cut volume ~30%/wk, keep intensity short & sharp.","key":"Short race-pace openers","milestone":true,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike 45–60 min + race-pace bursts","sport":"bike"},{"label":"Upper-body strength (light) 25 min","sport":"strength"}],[{"label":"Swim 40 min + run 30 min strides","sport":"swim"}],[{"label":"Bike 40 min easy / swim 30 min","sport":"bike"},{"label":"Lower-body strength (light) 25 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Short swim + spin / pre-race","sport":"swim"}],[{"label":"Long session if >2 wks out, else rest","sport":"run"}]]},{"n":73,"weekOf":"2027-11-01","phase":"Taper & Race","block":"Taper","hours":{"swim":1.5,"bike":2.75,"run":2.0,"strength":0.5,"brick":0.75,"total":7.5},"dist":{"run_km":18.5,"run_mi":11.5,"bike_km":77,"bike_mi":47.8},"focus":"Maintain frequency, slash duration. Stay loose and rested.","key":"Short race-pace openers","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike 45–60 min + race-pace bursts","sport":"bike"},{"label":"Upper-body strength (light) 25 min","sport":"strength"}],[{"label":"Swim 40 min + run 30 min strides","sport":"swim"}],[{"label":"Bike 40 min easy / swim 30 min","sport":"bike"},{"label":"Lower-body strength (light) 25 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Short swim + spin / pre-race","sport":"swim"}],[{"label":"Long session if >2 wks out, else rest","sport":"run"}]]},{"n":74,"weekOf":"2027-11-08","phase":"Taper & Race","block":"Taper","hours":{"swim":1.25,"bike":2.25,"run":1.5,"strength":0.25,"brick":0.5,"total":5.75},"dist":{"run_km":14.0,"run_mi":8.7,"bike_km":63,"bike_mi":39.1},"focus":"Maintain frequency, slash duration. Stay loose and rested.","key":"Short race-pace openers","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike 45–60 min + race-pace bursts","sport":"bike"},{"label":"Upper-body strength (light) 25 min","sport":"strength"}],[{"label":"Swim 40 min + run 30 min strides","sport":"swim"}],[{"label":"Bike 40 min easy / swim 30 min","sport":"bike"},{"label":"Lower-body strength (light) 25 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Short swim + spin / pre-race","sport":"swim"}],[{"label":"Long session if >2 wks out, else rest","sport":"run"}]]},{"n":75,"weekOf":"2027-11-15","phase":"Taper & Race","block":"Taper","hours":{"swim":1.0,"bike":2.0,"run":1.25,"strength":0.25,"brick":0.5,"total":5.0},"dist":{"run_km":11.5,"run_mi":7.1,"bike_km":56,"bike_mi":34.8},"focus":"Maintain frequency, slash duration. Stay loose and rested.","key":"Short race-pace openers","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike 45–60 min + race-pace bursts","sport":"bike"},{"label":"Upper-body strength (light) 25 min","sport":"strength"}],[{"label":"Swim 40 min + run 30 min strides","sport":"swim"}],[{"label":"Bike 40 min easy / swim 30 min","sport":"bike"},{"label":"Lower-body strength (light) 25 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Short swim + spin / pre-race","sport":"swim"}],[{"label":"Long session if >2 wks out, else rest","sport":"run"}]]},{"n":76,"weekOf":"2027-11-22","phase":"Taper & Race","block":"Taper","hours":{"swim":1.0,"bike":1.75,"run":1.25,"strength":0.25,"brick":0.5,"total":4.75},"dist":{"run_km":11.5,"run_mi":7.1,"bike_km":49,"bike_mi":30.4},"focus":"Maintain frequency, slash duration. Stay loose and rested.","key":"Short race-pace openers","milestone":false,"deload":false,"days":[[{"label":"Mobility / rest","sport":"rest"}],[{"label":"Bike 45–60 min + race-pace bursts","sport":"bike"},{"label":"Upper-body strength (light) 25 min","sport":"strength"}],[{"label":"Swim 40 min + run 30 min strides","sport":"swim"}],[{"label":"Bike 40 min easy / swim 30 min","sport":"bike"},{"label":"Lower-body strength (light) 25 min","sport":"strength"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Short swim + spin / pre-race","sport":"swim"}],[{"label":"Long session if >2 wks out, else rest","sport":"run"}]]},{"n":77,"weekOf":"2027-11-29","phase":"Taper & Race","block":"Race Week","hours":{"swim":1.0,"bike":1.5,"run":1.0,"strength":0.0,"brick":0.5,"total":4.0},"dist":{"run_km":9.0,"run_mi":5.6,"bike_km":42,"bike_mi":26.1},"focus":"RACE WEEK — IRONMAN 70.3 La Quinta, Sun Dec 5. Short openers, rest, race!","key":"RACE DAY","milestone":true,"deload":false,"days":[[{"label":"Mobility / short swim openers","sport":"swim"}],[{"label":"Bike 30 min easy + 3×2 min race pace","sport":"bike"}],[{"label":"Swim 20 min easy + run 15 min strides","sport":"run"}],[{"label":"Travel / register / rack bike","sport":"rest"}],[{"label":"Rest day","sport":"rest"}],[{"label":"Rest — prep transition bags, early night","sport":"rest"}],[{"label":"RACE DAY — IRONMAN 70.3 La Quinta","sport":"brick"}]]}]};
+const SPORTC = {swim:"var(--swim)",bike:"var(--bike)",run:"var(--run)",strength:"var(--strength)",brick:"var(--brick)",rest:"var(--rest)"};
+const SPORTHEX = {swim:"#2e86de",bike:"#27ae60",run:"#e67e22",strength:"#8e44ad",brick:"#16a085",rest:"#9aa3b2"};
+const PHASEC = {"Foundation":"#5b8def","Base":"#27ae60","Build & Integrate":"#e6a817","Peak":"#e67e22","Taper & Race":"#b0578d"};
+const KEY="im703_tracker_v1";
+let S = load();
+let _saveWarned=false;
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+function save(){
+  try{
+    const str=JSON.stringify(S);
+    localStorage.setItem(KEY,str);
+    if(localStorage.getItem(KEY)!==str) throw new Error("verify failed");
+    hideSaveWarn();
+  }catch(e){ showSaveWarn(); }
+  queueCloud();
+}
+function showSaveWarn(){
+  if(_saveWarned)return; _saveWarned=true;
+  let b=document.getElementById("savewarn");
+  if(!b){
+    b=document.createElement("div");b.id="savewarn";
+    b.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#b00020;color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;box-shadow:0 -2px 8px rgba(0,0,0,.3)";
+    document.body.appendChild(b);
+  }
+  b.innerHTML="\u26a0 This browser isn't letting the tracker save your progress \u2014 likely private/incognito mode or blocked site storage. Open the <strong>Backup</strong> tab and export your data so nothing is lost, then use a normal (non-incognito) window.";
+  b.style.display="block";
+}
+function hideSaveWarn(){_saveWarned=false;const b=document.getElementById("savewarn");if(b)b.style.display="none";}
+S.checks=S.checks||{}; S.logs=S.logs||[]; S.tests=S.tests||{}; S.dayOrder=S.dayOrder||{}; S.itemOverride=S.itemOverride||{}; S.itemRemoved=S.itemRemoved||{}; S.itemAdded=S.itemAdded||{};
+/* Ask the browser to keep this data and not evict it under storage pressure. */
+try{ if(navigator.storage&&navigator.storage.persist){navigator.storage.persist();} }catch(e){}
+/* Probe write so we warn immediately if this environment can't persist data. */
+try{ const _p="__im703_probe__"; localStorage.setItem(_p,"1"); if(localStorage.getItem(_p)!=="1"){showSaveWarn();} localStorage.removeItem(_p); }catch(e){ showSaveWarn(); }
+
+/* ===================== Cloud sync (Supabase) =====================
+   Optional. To make every device show the same data, paste your Supabase
+   Project URL and anon public key below (or via the Backup tab at runtime). */
+const SUPABASE_URL = "";   /* e.g. https://abcdyourproject.supabase.co */
+const SUPABASE_KEY = "";   /* your project's anon public key (starts with eyJ...) */
+const ROW_ID = "main";
+function sbUrl(){return (localStorage.getItem("im703_sb_url")||SUPABASE_URL||"").trim().replace(/\/+$/,"");}
+function sbKey(){return (localStorage.getItem("im703_sb_key")||SUPABASE_KEY||"").trim();}
+function cloudOn(){return !!(sbUrl()&&sbKey());}
+let _syncTimer=null;
+function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
+  let pill=document.getElementById("syncpill");
+  if(!pill){pill=document.createElement("div");pill.id="syncpill";
+    pill.style.cssText="position:fixed;top:8px;right:8px;z-index:9998;background:rgba(20,30,50,.85);color:#fff;font-size:11px;padding:4px 9px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none";
+    document.body.appendChild(pill);}
+  pill.textContent=txt; pill.style.display=cloudOn()?"block":"none";
+}
+async function cloudPull(){
+  if(!cloudOn())return null;
+  try{ setSync("Syncing\u2026");
+    const r=await fetch(sbUrl()+"/rest/v1/tracker?id=eq."+ROW_ID+"&select=data,updated_at",
+      {headers:{apikey:sbKey(),Authorization:"Bearer "+sbKey()}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const rows=await r.json(); setSync("Synced \u2713");
+    return (rows&&rows[0])?rows[0]:null;
+  }catch(e){ setSync("Offline \u2013 local only"); return null; }
+}
+async function cloudPush(){
+  if(!cloudOn())return;
+  try{ setSync("Saving\u2026");
+    const body=[{id:ROW_ID,data:S,updated_at:new Date().toISOString()}];
+    const r=await fetch(sbUrl()+"/rest/v1/tracker",
+      {method:"POST",
+       headers:{apikey:sbKey(),Authorization:"Bearer "+sbKey(),"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},
+       body:JSON.stringify(body)});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    setSync("Synced \u2713");
+  }catch(e){ setSync("Offline \u2013 saved on device"); }
+}
+function queueCloud(){ if(!cloudOn())return; clearTimeout(_syncTimer); _syncTimer=setTimeout(cloudPush,800); }
+
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const fmtDate=iso=>{const d=new Date(iso+"T00:00:00");return d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})};
+const fmtShort=iso=>{const d=new Date(iso+"T00:00:00");return d.toLocaleDateString(undefined,{day:"numeric",month:"short"})};
+function weekEnd(iso){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
+function addDaysISO(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function currentWeek(){
+  const t=new Date(todayISO()+"T00:00:00"), s=new Date(PLAN.start+"T00:00:00");
+  const idx=Math.floor((t-s)/(7*864e5))+1;
+  return Math.min(Math.max(idx,1),PLAN.nWeeks);
+}
+function weekOfDate(iso){
+  const d=new Date(iso+"T00:00:00"), s=new Date(PLAN.start+"T00:00:00");
+  return Math.floor((d-s)/(7*864e5))+1;
+}
+
+/* ---------- countdown + overall ---------- */
+function renderTop(){
+  const t=new Date(todayISO()+"T00:00:00"), r=new Date(PLAN.race+"T00:00:00");
+  const days=Math.round((r-t)/864e5);
+  $("#cd").textContent=days>0?days:(days===0?"TODAY":"done");
+  let total=0,done=0;
+  PLAN.weeks.forEach(w=>weekItems(w).forEach(it=>{if(it.sport!=="rest"){total++;if(S.checks[it.id])done++;}}));
+  const pct=total?Math.round(done/total*100):0;
+  $("#ovfill").style.width=pct+"%";
+  $("#ovleft").textContent=done+" / "+total+" sessions done · "+pct+"%";
+}
+
+/* ---------- donut for week ---------- */
+function donut(pct,size=42){
+  const r=size/2-4, c=2*Math.PI*r, off=c*(1-pct/100);
+  const col=pct>=100?"#27ae60":(pct>0?"#2e5496":"#cfd6e4");
+  return `<svg class="wprog" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#eef1f7" stroke-width="5"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="5"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+      stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="800" fill="#1f3864">${pct}</text>
+  </svg>`;
+}
+function phaseIndex(ph){return PLAN.phases.indexOf(ph);}
+function orderFor(w){
+  const pi=phaseIndex(w.phase), n=w.days.length;
+  if(!S.dayOrder[pi]||S.dayOrder[pi].length!==n){
+    S.dayOrder[pi]=Array.from({length:n},(_,i)=>i);
+  }
+  return S.dayOrder[pi];
+}
+// Effective workout list for one day: base plan items minus any the user removed,
+// plus any the user added. Each entry carries its stable checkoff id and base {sport,label}.
+function dayItems(w,di){
+  const out=[];
+  (w.days[di]||[]).forEach((it,ii)=>{
+    const id=w.n+"-"+di+"-"+ii;
+    if(S.itemRemoved[id])return;
+    out.push({id,base:it,added:false});
+  });
+  (S.itemAdded[w.n+"-"+di]||[]).forEach(a=>{
+    out.push({id:w.n+"-"+di+"-a"+a.aid,base:{sport:a.sport,label:a.label},added:true});
+  });
+  return out;
+}
+// Flat list of every workout item in a week with its canonical checkoff id.
+function weekItems(w){
+  const out=[];
+  w.days.forEach((day,di)=>dayItems(w,di).forEach(item=>{
+    const ov=S.itemOverride[item.id];
+    out.push({sport:ov?ov.sport:item.base.sport,id:item.id});
+  }));
+  return out;
+}
+function weekDone(w){
+  let t=0,d=0;
+  weekItems(w).forEach(it=>{if(it.sport!=="rest"){t++;if(S.checks[it.id])d++;}});
+  return {t,d,pct:t?Math.round(d/t*100):0};
+}
+
+/* ---------- Plan view ---------- */
+/* ---------- Animated illustrated scenes (one per sport) ---------- */
+const SPORTNAME={swim:"Swim",bike:"Bike",run:"Run",strength:"Strength",brick:"Brick",rest:"Rest"};
+const DEFAULTLABEL={swim:"Swim",bike:"Bike",run:"Run",strength:"Strength",brick:"Brick (bike → run)",rest:"Rest / recovery"};
+const SWAPTYPES=["swim","bike","run","strength","brick","rest"];
+function typeOpts(sel,orig){return SWAPTYPES.map(s=>`<option value="${s}"${s===sel?" selected":""}${s===orig?' class="orig"':''}>${SPORTNAME[s]}${s===orig?" (original)":""}</option>`).join("");}
+function wheelG(x){return `<g transform="translate(${x} 18)"><g class="wheel">
+    <circle r="8.4" fill="#2b2f3a"/><circle r="7.6" fill="none" stroke="#3c424f" stroke-width="1.4"/>
+    <circle r="4.6" fill="#fff"/><circle r="1.9" fill="#ffce4a"/>
+    <line x1="-4.4" y1="0" x2="4.4" y2="0" stroke="#cfd6e4" stroke-width="1.2"/>
+    <line x1="0" y1="-4.4" x2="0" y2="4.4" stroke="#cfd6e4" stroke-width="1.2"/></g></g>`;}
+function bikeGlyph(){return `
+  ${wheelG(2)}${wheelG(26)}
+  <path d="M2 18 L14 18 L8 7 Z M14 18 L20 7 L26 18 M8 7 L20 7" fill="none" stroke="#ff5d8f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="5" y="5.2" width="6.5" height="2.6" rx="1.3" fill="#2b2f3a"/>
+  <line x1="18.5" y1="7" x2="24" y2="3.4" stroke="#2b2f3a" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M9 7 Q13 0 18.5 2.6" stroke="#6a5cff" stroke-width="5.4" fill="none" stroke-linecap="round"/>
+  <line x1="16" y1="0.5" x2="23.5" y2="3.4" stroke="#ffd9b3" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="14.5" cy="-4" r="6" fill="#ffe0bd"/>
+  <path d="M8.6 -4.4 a6 6 0 0 1 12 0 Z" fill="#22b8ff"/>
+  <rect x="8.4" y="-5" width="12.2" height="2.2" rx="1.1" fill="#1f95da"/>
+  <path d="M14.5 -10 q3.3 -0.4 3 2.4" stroke="#22b8ff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <circle cx="17.4" cy="-4" r="1.05" fill="#2b2f3a"/>
+  <path d="M16 -1.4 q1.6 1.5 3.1 0" stroke="#c2724a" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  <circle cx="12.4" cy="-2" r="1.5" fill="#ff9bb5"/>`;}
+function runnerGlyph(){return `
+  <g transform="translate(0 14)"><line class="legb" x1="0" y1="0" x2="-5.4" y2="12" stroke="#6a5cff" stroke-width="4.4" stroke-linecap="round"/></g>
+  <g transform="translate(0 14)"><line class="legf" x1="0" y1="0" x2="6.4" y2="12" stroke="#7b54e0" stroke-width="4.4" stroke-linecap="round"/></g>
+  <path d="M0.5 3 L0.5 14.5" stroke="#ff8a3d" stroke-width="6.2" stroke-linecap="round"/>
+  <line x1="0.5" y1="6" x2="8" y2="2.4" stroke="#ffd9b3" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="0.5" y1="6" x2="-7" y2="9.4" stroke="#ffd9b3" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="1" cy="-3.4" r="6" fill="#ffe0bd"/>
+  <path d="M-4.6 -5.6 q5.6 -3.4 11.2 0" stroke="#ff5d8f" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M1.2 -9.6 q3.3 -1 3.2 2.2" stroke="#6b4a33" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="4" cy="-3.4" r="1.05" fill="#2b2f3a"/>
+  <path d="M2.8 -0.9 q1.6 1.5 3.1 0" stroke="#c2724a" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  <circle cx="-0.4" cy="-1.3" r="1.5" fill="#ff9bb5"/>`;}
+const SCENES={
+  swim:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#cdeeff"/><circle cx="84" cy="13" r="7.5" fill="#ffe14a"/><circle cx="84" cy="13" r="7.5" fill="#fff3b0" opacity=".45"/>
+    <rect y="24" width="100" height="40" fill="#39a9ec"/>
+    <path class="wave" d="M-25 24 q6.25 -5 12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 V64 H-25 Z" fill="#6fc4f2"/>
+    <path class="wave f" d="M-25 28 q6.25 5 12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 V64 H-25 Z" fill="#2f8fd6" opacity=".7"/>
+    <circle cx="34" cy="40" r="1.7" fill="#cdeeff" opacity=".85"/><circle cx="40" cy="44" r="1.1" fill="#cdeeff" opacity=".8"/><circle cx="30" cy="45" r="1" fill="#cdeeff" opacity=".7"/>
+    <g class="swimmer">
+      <path d="M30 34 q-7 -1.5 -12 2.5" stroke="#ff6fa5" stroke-width="4.6" fill="none" stroke-linecap="round"/>
+      <ellipse cx="46" cy="34" rx="15" ry="6.4" fill="#ff6fa5"/>
+      <circle cx="60.5" cy="31" r="7" fill="#ffe0bd"/>
+      <path d="M53.5 31 a7 7 0 0 1 14 0 Z" fill="#ffce4a"/>
+      <ellipse cx="63.5" cy="31" rx="2.6" ry="2.1" fill="#dff3ff" stroke="#5a6b8c" stroke-width="1"/>
+      <path d="M61.5 35 q2 1.7 4 0" stroke="#c2724a" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <circle cx="56.5" cy="33.4" r="1.5" fill="#ff9bb5"/>
+      <path class="arm" d="M48 31 q9 -9 15 -2.5" stroke="#ffe0bd" stroke-width="4.2" fill="none" stroke-linecap="round"/></g></svg>`,
+  bike:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#dff3ff"/><circle cx="20" cy="13" r="7.5" fill="#ffe14a"/><circle cx="20" cy="13" r="7.5" fill="#fff3b0" opacity=".45"/>
+    <ellipse cx="78" cy="50" rx="26" ry="13" fill="#bfe8c4"/><ellipse cx="30" cy="52" rx="22" ry="11" fill="#a9dfb4"/>
+    <rect y="48" width="100" height="16" fill="#6b6f7a"/>
+    <line class="lane" x1="-20" y1="56" x2="120" y2="56" stroke="#ffe14a" stroke-width="3"/>
+    <g transform="translate(34 30)"><g class="biker">${bikeGlyph()}</g></g></svg>`,
+  run:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#eaf7e6"/><circle cx="82" cy="13" r="7.5" fill="#ffe14a"/><circle cx="82" cy="13" r="7.5" fill="#fff3b0" opacity=".45"/>
+    <g class="scn s">${[0,1,2,3].map(k=>`<circle cx="${18+50*k}" cy="44" r="9" fill="#9bd29b"/><circle cx="${39+50*k}" cy="42" r="11" fill="#86c98a"/>`).join("")}</g>
+    <rect y="46" width="100" height="18" fill="#caa46b"/>
+    <g class="scn">${[0,1,2,3].map(k=>`<circle cx="${8+50*k}" cy="56" r="1.6" fill="#a8854f"/><circle cx="${30+50*k}" cy="58" r="1.6" fill="#a8854f"/>`).join("")}</g>
+    <g transform="translate(46 30)"><g class="runner">${runnerGlyph()}</g></g></svg>`,
+  strength:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#f3edff"/><rect y="50" width="100" height="14" fill="#d9ccf7"/>
+    <g transform="translate(50 28)">
+      <circle cx="0" cy="-2" r="5.5" fill="#ffd9b3"/>
+      <path d="M0 3 L0 16" stroke="#9b6bff" stroke-width="5" stroke-linecap="round"/>
+      <line x1="0" y1="16" x2="-7" y2="28" stroke="#7b54e0" stroke-width="4" stroke-linecap="round"/>
+      <line x1="0" y1="16" x2="7" y2="28" stroke="#7b54e0" stroke-width="4" stroke-linecap="round"/>
+      <g class="bar"><line x1="0" y1="4" x2="-9" y2="-8" stroke="#ffd9b3" stroke-width="3.4" stroke-linecap="round"/>
+        <line x1="0" y1="4" x2="9" y2="-8" stroke="#ffd9b3" stroke-width="3.4" stroke-linecap="round"/>
+        <line x1="-18" y1="-9" x2="18" y2="-9" stroke="#2b2f3a" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="-18" cy="-9" r="5" fill="#ff5d8f"/><circle cx="18" cy="-9" r="5" fill="#ff5d8f"/></g></g></svg>`,
+  brick:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#e6fbf6"/><rect y="48" width="100" height="16" fill="#6b6f7a"/>
+    <line class="lane" x1="-20" y1="56" x2="120" y2="56" stroke="#ffe14a" stroke-width="3"/>
+    <g transform="translate(6 31) scale(.82)"><g class="biker">${bikeGlyph()}</g></g>
+    <path d="M48 30 L58 30 M55 27 L58 30 L55 33" stroke="#16c0ac" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(76 31)"><g class="runner">${runnerGlyph()}</g></g></svg>`,
+  rest:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#eef2fb"/>
+    <circle cx="78" cy="16" r="10" fill="#ffe9a8"/><circle cx="73" cy="13" r="9" fill="#eef2fb"/>
+    <circle cx="20" cy="14" r="1.5" fill="#cfd6e8"/><circle cx="40" cy="10" r="1.5" fill="#cfd6e8"/><circle cx="58" cy="22" r="1.5" fill="#cfd6e8"/>
+    <rect x="18" y="44" width="64" height="13" rx="6" fill="#c9d3ef"/><circle cx="33" cy="44" r="7" fill="#ffd9b3"/>
+    <text class="zz" x="44" y="40" font-size="11" font-weight="700" fill="#9aa6c4">z</text>
+    <text class="zz2" x="52" y="34" font-size="14" font-weight="700" fill="#9aa6c4">Z</text></svg>`
+};
+function sportScene(sport){return SCENES[sport]||SCENES.rest;}
+
+function renderPlan(){
+  const filt=$("#phasefilter").value, cur=currentWeek(), box=$("#weeks");
+  box.innerHTML="";
+  let lastPhase=null;
+  PLAN.weeks.forEach(w=>{
+    if(filt!=="all"&&w.phase!==filt)return;
+    if(w.phase!==lastPhase){
+      lastPhase=w.phase;
+      const ph=document.createElement("div");ph.className="phasehead";
+      ph.innerHTML=`<span class="pill" style="background:${PHASEC[w.phase]}">${w.phase}</span><span class="ln"></span>`;
+      box.appendChild(ph);
+    }
+    const wd=weekDone(w);
+    const el=document.createElement("div");
+    el.className="week"+(w.n===cur?" current open":"");
+    el.id="wk"+w.n;
+    el.innerHTML=`
+      <div class="whead">
+        <div class="wnum">W${w.n}<small>${fmtShort(w.weekOf)}–${fmtShort(weekEnd(w.weekOf))}</small></div>
+        <div class="wmeta">
+          ${w.milestone?`<div class="badgeflag">★ ${w.block==="Race Week"?"Race week":"Milestone"}</div>`:(w.deload?`<div class="badgeflag" style="color:#3b6">Recovery week</div>`:"")}
+          <div class="wtarget"><b>Swim</b> ${w.hours.swim}h · <b>Bike</b> ${w.dist.bike_mi} mi <span class="wtdim">(${w.hours.bike}h)</span> · <b>Run</b> ${w.dist.run_mi} mi <span class="wtdim">(${w.hours.run}h)</span> · <b>Strength</b> ${w.hours.strength}h</div>
+        </div>
+        <div class="whours">${w.hours.total}h<small>${wd.d}/${wd.t} done</small></div>
+        ${donut(wd.pct)}
+        <svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="wbody">
+        ${(()=>{const order=orderFor(w), pi=phaseIndex(w.phase);
+          return order.map((canon,di)=>{
+            const wd=PLAN.weekdays[di];
+            const items=dayItems(w,canon).map(item=>{
+              const id=item.id, it=item.base, ov=S.itemOverride[id];
+              const sp=ov?ov.sport:it.sport, lbl=ov?ov.label:it.label;
+              const on=!!S.checks[id], rest=sp==="rest";
+              const logged=S.logs.some(l=>l.planId===id);
+              const dt=addDaysISO(w.weekOf,di);
+              return `<div class="tile sport-${sp}${rest?" rest":""}${on?" done":""}" data-id="${id}">
+                <div class="tilescene">${sportScene(sp)}</div>
+                <div class="tiletext"><div class="tilelabel">${escapeHtml(lbl)}</div><div class="tilesport">${SPORTNAME[sp]||sp}</div>
+                </div>
+                <button type="button" class="removeitem" data-k="${id}" title="Remove this workout from the day">&times;</button>
+                <select class="typesel" data-k="${id}" title="Replace this workout with another type — the original is marked">${typeOpts(sp,it.sport)}</select>
+                ${rest?`<span class="restbadge">Rest day</span>`:`<input type="checkbox" class="tilecheck" data-k="${id}" ${on?"checked":""} disabled title="Checks off automatically when you log this workout">`+`
+                <button type="button" class="logbtn${logged?" edit":""}" data-k="${id}" data-sport="${sp}" data-date="${dt}" data-label="${escapeHtml(lbl)}">${logged?"Edit":"+ Log"}</button>`}
+              </div>`;}).join("");
+            const opts=PLAN.weekdays.map((d,j)=>`<option value="${j}"${j===di?" selected":""}>${d}</option>`).join("");
+            return `<div class="day">
+              <div class="dayhdr">
+                <span class="dayname">${wd}</span>
+                <span class="dayswap" title="Move this day's workout to another weekday">&#8646; <select data-ph="${pi}" data-pos="${di}">${opts}</select></span>
+              </div>
+              <div class="dayitems">${items}</div>
+              <button type="button" class="additem" data-day="${w.n+"-"+canon}" title="Add a workout to this day">+ Add workout</button>
+            </div>`;}).join("");})()}
+      </div>`;
+    box.appendChild(el);
+  });
+  $$(".whead",box).forEach(h=>h.addEventListener("click",e=>{
+    if(e.target.tagName==="INPUT")return;
+    h.parentElement.classList.toggle("open");
+  }));
+  // Checkboxes are read-only indicators: they check off only when a workout is logged.
+  $$(".logbtn",box).forEach(b=>b.addEventListener("click",e=>{
+    e.preventDefault(); e.stopPropagation();
+    const id=b.dataset.k, ex=S.logs.filter(l=>l.planId===id);
+    if(ex.length){ openEditLog(ex[ex.length-1].id); }   // already logged → edit it
+    else { openQuickLog(id,b.dataset.sport,b.dataset.date,b.dataset.label); }
+  }));
+  // Replace a single workout with any other type (per-day override). Picking the
+  // option marked "(original)" restores the original plan.
+  $$(".typesel",box).forEach(sel=>sel.addEventListener("change",e=>{
+    e.stopPropagation();
+    const id=sel.dataset.k, ns=sel.value, p=id.split("-");
+    const w=PLAN.weeks.find(x=>x.n===+p[0]);
+    const orig=w&&w.days[+p[1]]&&w.days[+p[1]][+p[2]];
+    if(orig&&ns===orig.sport){ delete S.itemOverride[id]; }
+    else { S.itemOverride[id]={sport:ns,label:DEFAULTLABEL[ns]||SPORTNAME[ns]||ns}; }
+    save();
+    const openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+    renderPlan(); renderTop();
+    openIds.forEach(x=>{const el2=$("#"+x);if(el2)el2.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+  // Remove a workout from a day. Base-plan items are flagged removed; user-added
+  // items are dropped. Any check, override, or logged session for it is cleared too.
+  $$(".removeitem",box).forEach(b=>b.addEventListener("click",e=>{
+    e.preventDefault(); e.stopPropagation();
+    const id=b.dataset.k, p=id.split("-"), wn=+p[0], di=+p[1];
+    if(/^a/.test(p[2])){
+      const key=wn+"-"+di, aid=p[2].slice(1);
+      S.itemAdded[key]=(S.itemAdded[key]||[]).filter(a=>String(a.aid)!==aid);
+      if(!S.itemAdded[key].length)delete S.itemAdded[key];
+    } else { S.itemRemoved[id]=1; }
+    delete S.checks[id]; delete S.itemOverride[id];
+    S.logs=S.logs.filter(l=>l.planId!==id);
+    save();
+    const openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+    renderPlan(); renderTop(); renderHome();
+    openIds.forEach(x=>{const el2=$("#"+x);if(el2)el2.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+  // Add a new workout to a day (defaults to Run — change its type with the dropdown).
+  $$(".additem",box).forEach(b=>b.addEventListener("click",e=>{
+    e.preventDefault(); e.stopPropagation();
+    const key=b.dataset.day;
+    (S.itemAdded[key]=S.itemAdded[key]||[]).push({aid:Date.now(),sport:"run",label:DEFAULTLABEL.run});
+    save();
+    const openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+    renderPlan(); renderTop(); renderHome();
+    openIds.forEach(x=>{const el2=$("#"+x);if(el2)el2.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+  // Swap a day's workout with another weekday (applies across the whole phase).
+  $$("select[data-pos]",box).forEach(sel=>sel.addEventListener("change",()=>{
+    const pi=+sel.dataset.ph, a=+sel.dataset.pos, b=+sel.value;
+    if(a===b)return;
+    const ord=S.dayOrder[pi]; const tmp=ord[a]; ord[a]=ord[b]; ord[b]=tmp;
+    save();
+    const openIds=$$(".week.open",box).map(e=>e.id), sy=window.scrollY;
+    renderPlan();
+    openIds.forEach(id=>{const e=$("#"+id);if(e)e.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+}
+function jumpCurrent(){
+  const cur=currentWeek();$("#phasefilter").value="all";renderPlan();
+  const el=$("#wk"+cur); if(el){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"center"});}
+}
+/* ---------- Quick-log from a plan tile (logs a workout AND checks it off) ---------- */
+let QL={id:"",sport:""};
+function reflectCheck(id){
+  const cb=document.querySelector('.tilecheck[data-k="'+id+'"]');
+  if(cb){cb.checked=true; const t=cb.closest(".tile"); if(t)t.classList.add("done");}
+  const btn=document.querySelector('.logbtn[data-k="'+id+'"]');
+  if(btn){btn.textContent="Edit"; btn.classList.add("edit");}
+  const wn=+id.split("-")[0], w=PLAN.weeks.find(x=>x.n===wn), card=$("#wk"+wn);
+  if(card&&w){const wd=weekDone(w);
+    const dn=card.querySelector(".wprog"); if(dn)dn.outerHTML=donut(wd.pct);
+    const sm=card.querySelector(".whours small"); if(sm)sm.textContent=wd.d+"/"+wd.t+" done";}
+}
+// Show/hide Environment + Elevation fields depending on the chosen sport.
+function syncQlSportFields(sport){
+  $("#ql_envfld").style.display=["swim","bike","run"].includes(sport)?"":"none";
+  const showElev=sport!=="swim";
+  $("#ql_elevfld").style.display=showElev?"":"none";
+  $("#ql_elevunitfld").style.display=showElev?"":"none";
+}
+function openQuickLog(id,sport,date,label){
+  QL={id,sport,editId:0};
+  $("#ql_sportfld").style.display="none";          // sport fixed by the plan tile
+  $("#ql_delete").style.display="none";
+  $("#ql_save").textContent="Save & check off \u2713";
+  $("#ql_title").textContent="Log: "+(label||SPORTNAME[sport]||sport);
+  $("#ql_sub").textContent=(SPORTNAME[sport]||sport)+" \u00b7 "+(date?fmtDate(date):"today");
+  $("#ql_date").value=date||todayISO();
+  $("#ql_dur").value="";$("#ql_dist").value="";$("#ql_elev").value="";$("#ql_notes").value="";
+  $("#ql_unit").value=sport==="swim"?"m":"mi";   // swim distance is measured in meters
+  $("#ql_env").value=sport==="swim"?"Indoor":"Outdoor";
+  $("#ql_elevunit").selectedIndex=0;
+  $("#ql_effort").selectedIndex=0;
+  syncQlSportFields(sport);
+  $("#qlog").classList.add("open");
+  setTimeout(()=>{try{$("#ql_dur").focus();}catch(e){}},30);
+}
+function openEditLog(logId){
+  const l=S.logs.find(x=>x.id==logId); if(!l)return;
+  QL={id:"",sport:l.sport,editId:l.id};
+  $("#ql_sportfld").style.display="";              // sport editable here
+  if($("#ql_sport").querySelector('option[value="'+l.sport+'"]'))$("#ql_sport").value=l.sport;
+  $("#ql_delete").style.display="";
+  $("#ql_save").textContent="Save changes \u2713";
+  $("#ql_title").textContent="Edit workout";
+  $("#ql_sub").textContent="Update the details below and save your changes.";
+  $("#ql_date").value=l.date||todayISO();
+  $("#ql_dur").value=l.dur||"";
+  $("#ql_dist").value=l.dist||"";
+  $("#ql_unit").value=l.unit||"mi";
+  $("#ql_env").value=l.env||"Outdoor";
+  $("#ql_elev").value=l.elev||"";
+  $("#ql_elevunit").value=l.elevunit||"ft";
+  const eo=[...$("#ql_effort").options].findIndex(o=>o.value===l.effort);
+  $("#ql_effort").selectedIndex=eo>=0?eo:0;
+  $("#ql_notes").value=l.notes||"";
+  syncQlSportFields(l.sport);
+  $("#qlog").classList.add("open");
+  setTimeout(()=>{try{$("#ql_dur").focus();}catch(e){}},30);
+}
+function closeQuickLog(){$("#qlog").classList.remove("open");}
+function saveQuickLog(){
+  const editing=!!QL.editId;
+  const sport=editing?$("#ql_sport").value:QL.sport;
+  const envSport=["swim","bike","run"].includes(sport);
+  const entry={date:$("#ql_date").value||todayISO(),sport,
+    dur:$("#ql_dur").value?+$("#ql_dur").value:0,
+    dist:$("#ql_dist").value?+$("#ql_dist").value:0,unit:$("#ql_unit").value,
+    env:envSport?$("#ql_env").value:"",
+    elev:(sport!=="swim"&&$("#ql_elev").value)?+$("#ql_elev").value:0,elevunit:$("#ql_elevunit").value,
+    effort:$("#ql_effort").value,notes:$("#ql_notes").value.trim()};
+  if(editing){
+    const i=S.logs.findIndex(x=>x.id==QL.editId);
+    if(i>=0)S.logs[i]=Object.assign({},S.logs[i],entry);
+    save();
+  }else{
+    entry.id=Date.now();
+    entry.planId=QL.id||"";        // tie the log to its plan tile so +Log can edit it later
+    S.logs.push(entry);
+    if(QL.id)S.checks[QL.id]=1;
+    save();
+    if(QL.id)reflectCheck(QL.id);
+  }
+  renderTop();renderHome();
+  closeQuickLog();
+}
+function deleteCurrentLog(){
+  const i=S.logs.findIndex(x=>x.id==QL.editId);
+  if(i<0){closeQuickLog();return;}
+  const pid=S.logs[i].planId;
+  S.logs.splice(i,1);              // remove from the database
+  if(pid)delete S.checks[pid];     // un-check / un-mark the plan tile too
+  save();
+  clearQlForm();                   // empty the form
+  closeQuickLog();
+  const box=$("#weeks"), openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+  renderPlan();                    // tile reverts to "+ Log" and unchecked
+  openIds.forEach(x=>{const el=$("#"+x);if(el)el.classList.add("open");});
+  window.scrollTo(0,sy);
+  renderTop();renderHome();        // refresh the dashboard
+}
+function clearQlForm(){
+  $("#ql_dur").value="";$("#ql_dist").value="";$("#ql_elev").value="";$("#ql_notes").value="";
+  $("#ql_date").value=todayISO();
+  $("#ql_unit").value="mi";
+  $("#ql_env").selectedIndex=0;$("#ql_elevunit").selectedIndex=0;$("#ql_effort").selectedIndex=0;
+}
+
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---------- Dashboard (illustrated KPI cards) ---------- */
+const HOME_CARDS=[
+  {key:"swim",sport:"swim",title:"Swim",bar:true},
+  {key:"bike",sport:"bike",title:"Bike",bar:true},
+  {key:"run",sport:"run",title:"Run",bar:true}
+];
+const SWIM_KMH=2.5; // plan stores swim as hours; estimate distance from planned swim time
+const KM2MI=0.621371; // dashboard shows distance in miles by default
+function toKm(dist,unit){if(!dist)return 0;const f={km:1,mi:1.60934,m:0.001,yd:0.0009144};return dist*(f[unit]||0);}
+function toFt(elev,unit){if(!elev)return 0;return unit==="m"?elev*3.28084:elev;}
+function planMi(w,sport){ // plan target distance in miles for the period math
+  if(!w)return 0;
+  if(sport==="bike")return (w.dist&&w.dist.bike_mi)||0;
+  if(sport==="run") return (w.dist&&w.dist.run_mi)||0;
+  if(sport==="swim")return ((w.hours&&w.hours.swim)||0)*SWIM_KMH*KM2MI; // swim estimated from planned time
+  return 0;
+}
+/* dashboard period selection */
+let DASH={mode:"week",week:0,month:""};
+function planMonths(){ // YYYY-MM strings spanned by the plan, in order
+  const out=[]; let d=new Date(PLAN.start+"T00:00:00"); d.setDate(1);
+  const end=new Date(PLAN.race+"T00:00:00");
+  while(d<=end){ out.push(d.toISOString().slice(0,7)); d.setMonth(d.getMonth()+1); }
+  return out;
+}
+function fmtMonth(ym){const d=new Date(ym+"-01T00:00:00");return d.toLocaleDateString(undefined,{month:"short",year:"numeric"});}
+function currentMonth(){const m=todayISO().slice(0,7),list=planMonths();return list.includes(m)?m:list[0];}
+function periodWeeks(){
+  // returns {weeks:[plan-week objs], startISO, endISO, label}
+  if(DASH.mode==="week"){
+    const w=PLAN.weeks.find(x=>x.n===DASH.week)||PLAN.weeks[0];
+    const s=w.weekOf, e=weekEnd(s);
+    return {weeks:[w],startISO:s,endISO:e,label:`Week ${w.n} · ${fmtShort(s)} – ${fmtShort(e)}`};
+  }
+  if(DASH.mode==="month"){
+    const ym=DASH.month||currentMonth();
+    const wk=PLAN.weeks.filter(w=>w.weekOf.slice(0,7)===ym);
+    return {weeks:wk,startISO:ym+"-01",endISO:ym+"-31",label:`${fmtMonth(ym)} · ${wk.length} plan week${wk.length===1?"":"s"}`};
+  }
+  return {weeks:PLAN.weeks,startISO:PLAN.start,endISO:PLAN.race,label:`All 77 weeks · 15 Jun 2026 → 5 Dec 2027`};
+}
+function logInPeriod(l,p){
+  if(DASH.mode==="month")return l.date.slice(0,7)===(DASH.month||currentMonth());
+  if(DASH.mode==="total")return true;
+  return l.date>=p.startISO && l.date<=p.endISO;
+}
+// Which cards have their "more stats" panel expanded (persists across re-renders).
+let MORE_OPEN={swim:false,bike:false,run:false};
+// minutes-per-something → "m:ss"
+function fmtMS(sec){if(!sec||!isFinite(sec)||sec<=0)return "—";let m=Math.floor(sec/60),s=Math.round(sec%60);if(s===60){m++;s=0;}return m+":"+String(s).padStart(2,"0");}
+// minutes → "Xh Ym" / "Z min"
+function fmtDur(min){if(!min||min<=0)return "—";if(min<60)return Math.round(min)+" min";const h=Math.floor(min/60),m=Math.round(min%60);return h+"h"+(m?(" "+m+"m"):"");}
+function renderHome(){
+  const wrap=$("#homecards"); if(!wrap)return;
+  const p=periodWeeks();
+  const weeksN=Math.max(1,p.weeks.length);
+  const monthsN=Math.max(1,new Set(p.weeks.map(w=>w.weekOf.slice(0,7))).size);
+  // planned distance per sport for the period (miles)
+  const plan={swim:0,bike:0,run:0};
+  p.weeks.forEach(w=>{plan.swim+=planMi(w,"swim");plan.bike+=planMi(w,"bike");plan.run+=planMi(w,"run");});
+  // logged stats per sport for the period
+  const agg={};HOME_CARDS.forEach(c=>agg[c.key]={min:0,km:0,kmIn:0,kmOut:0,ft:0,n:0});
+  S.logs.forEach(l=>{
+    const a=agg[l.sport]; if(!a)return; if(!logInPeriod(l,p))return;
+    const km=toKm(+l.dist||0,l.unit);
+    a.min+=(+l.dur||0); a.km+=km; a.ft+=toFt(+l.elev||0,l.elevunit); a.n++;
+    if((l.env||"")==="Indoor") a.kmIn+=km; else a.kmOut+=km;
+  });
+  wrap.innerHTML=HOME_CARDS.map(c=>{
+    const a=agg[c.key];
+    const isSwim=c.key==="swim";
+    const hrs=a.min/60, hrsTxt=hrs>=10?hrs.toFixed(0):hrs.toFixed(1);
+    // Swim distances are shown in meters; bike & run in miles.
+    const dispDist=(km)=>isSwim?Math.round(km*1000).toLocaleString()+" m":((km*KM2MI)<10?(km*KM2MI).toFixed(2):(km*KM2MI).toFixed(1))+" mi";
+    const distTxt=a.km>0?dispDist(a.km):"—";
+    const elevTxt=a.ft>=1?Math.round(a.ft).toLocaleString()+" ft":"—";
+    let bar="";
+    if(c.bar){
+      const plKm=(plan[c.key]||0)/KM2MI, lgKm=a.km, pct=plKm>0?Math.min(100,Math.round(lgKm/plKm*100)):0;
+      bar=plKm>0
+        ? `<div class="distbar">
+             <div class="distbar-top"><span>${dispDist(lgKm)} logged</span><span>${pct}% of plan</span></div>
+             <div class="distbar-track"><div class="distbar-fill" style="width:${pct}%"></div></div>
+             <div class="distbar-foot">Plan distance: <strong>${dispDist(plKm)}</strong>${isSwim?' <span class="est">(est.)</span>':''}</div>
+           </div>`
+        : `<div class="distbar"><div class="distbar-foot">No planned distance for this period.</div></div>`;
+    }
+    const elevKpi=isSwim?"":`<div class="kpi"><div class="kv">${elevTxt}</div><div class="kl">Elevation</div></div>`;
+    const envLine=(!isSwim && a.km>0)
+      ? `<div class="envsplit">Outdoor <strong>${(a.kmOut*KM2MI).toFixed(1)} mi</strong> · Indoor <strong>${(a.kmIn*KM2MI).toFixed(1)} mi</strong></div>`
+      : "";
+    // ----- expandable "more stats": pace + per session / week / month averages -----
+    const perSessKm=a.n?a.km/a.n:0, perSessMin=a.n?a.min/a.n:0;
+    const perWeekKm=a.km/weeksN,  perWeekMin=a.min/weeksN;
+    const perMonthKm=a.km/monthsN,perMonthMin=a.min/monthsN;
+    let paceChips;
+    if(isSwim){
+      const sec100=a.km>0?(a.min*60)/(a.km*10):0;   // a.km*1000m /100 = a.km*10 lengths of 100m
+      paceChips=`<div class="mschip"><div class="mcv">${fmtMS(sec100/4)}</div><div class="mcl">per 25 m</div></div>
+        <div class="mschip"><div class="mcv">${fmtMS(sec100/2)}</div><div class="mcl">per 50 m</div></div>
+        <div class="mschip"><div class="mcv">${fmtMS(sec100)}</div><div class="mcl">per 100 m</div></div>`;
+    }else{
+      const mi=a.km*KM2MI, secMi=mi>0?(a.min*60)/mi:0, mph=a.min>0?mi/(a.min/60):0;
+      paceChips=`<div class="mschip"><div class="mcv">${fmtMS(secMi)}<small> /mi</small></div><div class="mcl">Pace</div></div>
+        <div class="mschip"><div class="mcv">${mph>0?mph.toFixed(1):"—"}<small> mph</small></div><div class="mcl">Avg speed</div></div>`;
+    }
+    const more=a.n>0
+      ? `<div class="mssec">Pace</div>
+         <div class="mschips">${paceChips}</div>
+         <div class="mssec">Averages</div>
+         <div class="mstable">
+           <div class="msr mshdr"><span class="msl"></span><span class="msd">Distance</span><span class="mst">Time</span></div>
+           <div class="msr"><span class="msl">Per session</span><span class="msd">${a.n?dispDist(perSessKm):"—"}</span><span class="mst">${fmtDur(perSessMin)}</span></div>
+           <div class="msr"><span class="msl">Per week</span><span class="msd">${dispDist(perWeekKm)}</span><span class="mst">${fmtDur(perWeekMin)}</span></div>
+           <div class="msr"><span class="msl">Per month</span><span class="msd">${dispDist(perMonthKm)}</span><span class="mst">${fmtDur(perMonthMin)}</span></div>
+         </div>`
+      : `<div class="msempty">Log a ${c.title.toLowerCase()} workout to see pace and averages.</div>`;
+    return `<div class="hcard sport-${c.sport}">
+      <div class="hscene">${sportScene(c.sport)}</div>
+      <div class="hbody">
+        <div class="htitle">${c.title}</div>
+        <div class="kgrid${isSwim?" k3":""}">
+          <div class="kpi"><div class="kv">${hrsTxt}<small>h</small></div><div class="kl">Time</div></div>
+          <div class="kpi"><div class="kv">${distTxt}</div><div class="kl">Distance</div></div>
+          ${elevKpi}
+          <div class="kpi"><div class="kv">${a.n}</div><div class="kl">Sessions</div></div>
+        </div>
+        ${envLine}
+        ${bar}
+        <button type="button" class="morebtn${MORE_OPEN[c.key]?" open":""}" data-k="${c.key}">View more stats <span class="mchev">&#9662;</span></button>
+        <div class="morestats${MORE_OPEN[c.key]?" open":""}" id="more-${c.key}">${more}</div>
+      </div>
+    </div>`;
+  }).join("");
+  $$(".morebtn",wrap).forEach(b=>b.addEventListener("click",()=>{
+    const k=b.dataset.k; MORE_OPEN[k]=!MORE_OPEN[k];
+    const panel=$("#more-"+k); if(panel)panel.classList.toggle("open",MORE_OPEN[k]);
+    b.classList.toggle("open",MORE_OPEN[k]);
+    b.firstChild.textContent=MORE_OPEN[k]?"Hide stats ":"View more stats ";
+  }));
+  const rng=$("#d_range"); if(rng)rng.textContent=p.label;
+  const total=S.logs.length;
+  $("#homenote").textContent=total
+    ? `${total} workout${total>1?"s":""} logged in total · KPIs and bars reflect the period selected above.`
+    : `No workouts logged yet — open the Plan tab and tap “+ Log” on any session to add your first workout and watch these light up.`;
+}
+function populateDashPickers(){
+  const wsel=$("#d_week"); if(wsel&&!wsel.options.length){
+    wsel.innerHTML=PLAN.weeks.map(w=>`<option value="${w.n}">Week ${w.n} · ${fmtShort(w.weekOf)} – ${fmtShort(weekEnd(w.weekOf))}</option>`).join("");
+  }
+  const msel=$("#d_month"); if(msel&&!msel.options.length){
+    msel.innerHTML=planMonths().map(m=>`<option value="${m}">${fmtMonth(m)}</option>`).join("");
+  }
+  if(!DASH.week)DASH.week=currentWeek();
+  if(!DASH.month)DASH.month=currentMonth();
+  if(wsel)wsel.value=DASH.week;
+  if(msel)msel.value=DASH.month;
+}
+function syncDashControls(){
+  $("#d_week").style.display=DASH.mode==="week"?"":"none";
+  $("#d_month").style.display=DASH.mode==="month"?"":"none";
+}
+
+/* ---------- Backup ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="im703_tracker_backup_"+todayISO()+".json";a.click();
+  $("#datamsg").textContent="Exported. Keep this file safe.";
+}
+function importData(file){
+  const fr=new FileReader();
+  fr.onload=()=>{try{const o=JSON.parse(fr.result);S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},o);save();renderAll();$("#datamsg").textContent="Import successful.";}
+    catch(e){$("#datamsg").textContent="Could not read that file.";}};
+  fr.readAsText(file);
+}
+
+/* ---------- wiring ---------- */
+function renderAll(){renderTop();renderPlan();renderHome();}
+/* In-app confirm: first click arms the button, second click within 4s confirms.
+   Used instead of window.confirm(), which is a no-op in some app webviews. */
+function armConfirm(btn,onConfirm,label){
+  if(!btn)return;
+  if(btn._armed){clearTimeout(btn._armed);btn._armed=null;btn.textContent=btn._orig;btn.classList.remove("confirming");onConfirm();return;}
+  btn._orig=btn.textContent;
+  btn.textContent=label||"Click again to confirm";
+  btn.classList.add("confirming");
+  btn._armed=setTimeout(()=>{btn._armed=null;btn.textContent=btn._orig;btn.classList.remove("confirming");},4000);
+}
+$$(".tab").forEach(t=>t.addEventListener("click",()=>{
+  $$(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");
+  $$(".view").forEach(v=>v.classList.remove("active"));$("#"+t.dataset.v).classList.add("active");
+  if(t.dataset.v==="home")renderHome();
+}));
+/* ---- Dashboard period controls ---- */
+populateDashPickers();
+syncDashControls();
+$("#d_mode").addEventListener("change",e=>{DASH.mode=e.target.value;syncDashControls();renderHome();});
+$("#d_week").addEventListener("change",e=>{DASH.week=+e.target.value;renderHome();});
+$("#d_month").addEventListener("change",e=>{DASH.month=e.target.value;renderHome();});
+/* ---- Settings gear modal ---- */
+const _modal=$("#settings"),_gear=$("#gear"),_mx=$("#closemodal");
+if(_gear)_gear.addEventListener("click",()=>_modal.classList.add("open"));
+if(_mx)_mx.addEventListener("click",()=>_modal.classList.remove("open"));
+if(_modal)_modal.addEventListener("click",e=>{if(e.target===_modal)_modal.classList.remove("open");});
+/* ---- Quick-log modal wiring ---- */
+const _qlog=$("#qlog");
+$("#ql_save").addEventListener("click",saveQuickLog);
+$("#ql_close").addEventListener("click",closeQuickLog);
+$("#ql_cancel").addEventListener("click",closeQuickLog);
+$("#ql_delete").addEventListener("click",()=>armConfirm($("#ql_delete"),deleteCurrentLog,"Click again to delete"));
+$("#ql_sport").addEventListener("change",e=>syncQlSportFields(e.target.value));
+if(_qlog)_qlog.addEventListener("click",e=>{if(e.target===_qlog)closeQuickLog();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(_modal)_modal.classList.remove("open");if(_qlog)_qlog.classList.remove("open");}});
+$("#phasefilter").addEventListener("change",renderPlan);
+$("#jumpcur").addEventListener("click",jumpCurrent);
+$("#export").addEventListener("click",exportData);
+$("#importbtn").addEventListener("click",()=>$("#importfile").click());
+$("#importfile").addEventListener("change",e=>{if(e.target.files[0])importData(e.target.files[0]);});
+$("#reset").addEventListener("click",()=>armConfirm($("#reset"),()=>{
+  S={checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}};save();renderAll();
+  $("#datamsg").textContent="All data cleared.";
+},"Click again to erase everything"));
+/* ---- cloud sync wiring ---- */
+function fillSbFields(){const u=$("#sb_url"),k=$("#sb_key");if(u)u.value=localStorage.getItem("im703_sb_url")||SUPABASE_URL||"";if(k)k.value=localStorage.getItem("im703_sb_key")||SUPABASE_KEY||"";}
+async function initCloud(){
+  if(!cloudOn()){setSync("Local only");return;}
+  const row=await cloudPull();
+  if(row&&row.data){ S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data); renderAll(); }
+  else { cloudPush(); } /* seed the cloud with what we have */
+}
+const _sbSave=$("#sb_save");
+if(_sbSave)_sbSave.addEventListener("click",async()=>{
+  const u=$("#sb_url").value.trim().replace(/\/+$/,""), k=$("#sb_key").value.trim();
+  if(!u||!k){$("#sbmsg").textContent="Enter both the Project URL and the anon key.";return;}
+  localStorage.setItem("im703_sb_url",u); localStorage.setItem("im703_sb_key",k);
+  $("#sbmsg").textContent="Connecting\u2026";
+  const row=await cloudPull();
+  if(row===null && !cloudOn()){$("#sbmsg").textContent="Could not connect \u2013 check the values.";return;}
+  if(row&&row.data){ if(confirm("Cloud data found. Load it onto this device? (Cancel keeps this device's data and uploads it instead.)")){S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data);renderAll();} else {cloudPush();} }
+  else { cloudPush(); }
+  $("#sbmsg").textContent="Connected. This device now syncs.";
+});
+const _sbSync=$("#sb_sync");
+if(_sbSync)_sbSync.addEventListener("click",async()=>{
+  if(!cloudOn()){$("#sbmsg").textContent="Not connected yet.";return;}
+  const row=await cloudPull();
+  if(row&&row.data){S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data);renderAll();$("#sbmsg").textContent="Pulled latest from cloud.";}
+  else {cloudPush();$("#sbmsg").textContent="Cloud was empty \u2013 uploaded this device's data.";}
+});
+const _sbClear=$("#sb_clear");
+if(_sbClear)_sbClear.addEventListener("click",()=>{
+  localStorage.removeItem("im703_sb_url");localStorage.removeItem("im703_sb_key");
+  fillSbFields();setSync("Local only");$("#sbmsg").textContent="Disconnected. This device is now local-only.";
+});
+fillSbFields();
+renderAll();
+initCloud();
+// open current week on load
+setTimeout(()=>{const el=$("#wk"+currentWeek());if(el)el.classList.add("open");},60);
+</script>
+</body>
+</html>
