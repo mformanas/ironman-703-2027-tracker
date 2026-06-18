@@ -303,17 +303,33 @@
       <p class="note" id="datamsg"></p>
     </div>
     <div class="card">
-      <strong>Cloud sync across your devices</strong>
-      <p class="note">Connect a free Supabase database so this tracker shows the <em>same</em> data on your phone, laptop and tablet. Paste the two values from your Supabase project below and press Connect. Leave blank to stay on this device only. Status: <strong id="syncstat2">Local only</strong>.</p>
-      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-        <input id="sb_url" placeholder="Project URL  (e.g. https://abcd.supabase.co)">
-        <input id="sb_key" placeholder="anon public key (a long string starting with eyJ...)">
+      <strong>Cloud backup &amp; sync</strong>
+      <p class="note">Status: <strong id="syncstat2">Local only</strong>. When cloud backup is on, your progress is saved to a secure database automatically — so it's safe even if you clear your browser — and you can pick it up on any device using your sync code.</p>
+      <div id="syncidbox" style="display:none;margin-top:12px">
+        <p class="note" style="margin:0 0 6px"><strong>Your sync code</strong> — write this down. Enter it on another device (or after clearing your browser) to get your data back.</p>
+        <div class="row">
+          <input id="sb_code" readonly style="font-weight:700;letter-spacing:1px;flex:1;min-width:160px">
+          <button class="btn" id="sb_copy">Copy</button>
+        </div>
+        <p class="note" style="margin:14px 0 6px"><strong>On a new device?</strong> Enter an existing sync code to load that data here:</p>
+        <div class="row">
+          <input id="sb_codein" placeholder="e.g. ABC12-DE34F" style="flex:1;min-width:160px">
+          <button class="btn primary" id="sb_codeuse">Load my data</button>
+          <button class="btn" id="sb_sync">Sync now</button>
+        </div>
       </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="sb_save">Connect / Save</button>
-        <button class="btn" id="sb_sync">Sync now</button>
-        <button class="btn danger" id="sb_clear">Disconnect</button>
-      </div>
+      <details id="sbadv" style="margin-top:12px">
+        <summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">Advanced: use your own database</summary>
+        <p class="note" style="margin-top:8px">Point this device at a different Supabase project. Leave blank to use the shared one built into this app.</p>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+          <input id="sb_url" placeholder="Project URL  (e.g. https://abcd.supabase.co)">
+          <input id="sb_key" placeholder="anon public key (starts with eyJ...)">
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="sb_save">Connect / Save</button>
+          <button class="btn danger" id="sb_clear">Disconnect</button>
+        </div>
+      </details>
       <p class="note" id="sbmsg"></p>
     </div>
     <div class="card" style="margin-bottom:0">
@@ -391,12 +407,22 @@ try{ const _p="__im703_probe__"; localStorage.setItem(_p,"1"); if(localStorage.g
 /* ===================== Cloud sync (Supabase) =====================
    Optional. To make every device show the same data, paste your Supabase
    Project URL and anon public key below (or via the Backup tab at runtime). */
-const SUPABASE_URL = "";   /* e.g. https://abcdyourproject.supabase.co */
-const SUPABASE_KEY = "";   /* your project's anon public key (starts with eyJ...) */
-const ROW_ID = "main";
+/* ===== CLOUD BACKEND (Supabase) =====================================
+   These two values point every visitor's tracker at ONE shared database
+   so their progress is saved to the cloud (not just their browser) and
+   can be restored on any device via their personal sync code below.
+   Fill these in with your Supabase Project URL + anon public key.       */
+const SUPABASE_URL = "https://fcmskguzqbuszzxmmbao.supabase.co";
+const SUPABASE_KEY = "sb_publishable_VQeGOjkkLlkE0_DuZfMapQ_flzpFzuT";  /* publishable key \u2013 safe in public files */
 function sbUrl(){return (localStorage.getItem("im703_sb_url")||SUPABASE_URL||"").trim().replace(/\/+$/,"");}
 function sbKey(){return (localStorage.getItem("im703_sb_key")||SUPABASE_KEY||"").trim();}
 function cloudOn(){return !!(sbUrl()&&sbKey());}
+/* Each visitor gets a private random sync code = their row id in the shared
+   table. It lives in their browser; they can copy it to use on other devices
+   or paste an existing one to pull their data down. No login/passwords. */
+function genCode(){const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<10;i++)s+=a[Math.floor(Math.random()*a.length)];return s.slice(0,5)+"-"+s.slice(5);}
+function uid(){let u=localStorage.getItem("im703_uid");if(!u){u=genCode();localStorage.setItem("im703_uid",u);}return u;}
+function setUid(code){const c=(code||"").trim().toUpperCase();if(c)localStorage.setItem("im703_uid",c);return c;}
 let _syncTimer=null;
 function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
   let pill=document.getElementById("syncpill");
@@ -404,11 +430,13 @@ function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.ge
     pill.style.cssText="position:fixed;top:8px;right:8px;z-index:9998;background:rgba(20,30,50,.85);color:#fff;font-size:11px;padding:4px 9px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none";
     document.body.appendChild(pill);}
   pill.textContent=txt; pill.style.display=cloudOn()?"block":"none";
+  const box=document.getElementById("syncidbox"); if(box)box.style.display=cloudOn()?"":"none";
+  const c=document.getElementById("sb_code"); if(c&&!c.value)c.value=uid();
 }
 async function cloudPull(){
   if(!cloudOn())return null;
   try{ setSync("Syncing\u2026");
-    const r=await fetch(sbUrl()+"/rest/v1/tracker?id=eq."+ROW_ID+"&select=data,updated_at",
+    const r=await fetch(sbUrl()+"/rest/v1/tracker?id=eq."+encodeURIComponent(uid())+"&select=data,updated_at",
       {headers:{apikey:sbKey(),Authorization:"Bearer "+sbKey()}});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const rows=await r.json(); setSync("Synced \u2713");
@@ -418,7 +446,7 @@ async function cloudPull(){
 async function cloudPush(){
   if(!cloudOn())return;
   try{ setSync("Saving\u2026");
-    const body=[{id:ROW_ID,data:S,updated_at:new Date().toISOString()}];
+    const body=[{id:uid(),data:S,updated_at:new Date().toISOString()}];
     const r=await fetch(sbUrl()+"/rest/v1/tracker",
       {method:"POST",
        headers:{apikey:sbKey(),Authorization:"Bearer "+sbKey(),"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},
@@ -1061,7 +1089,14 @@ $("#reset").addEventListener("click",()=>armConfirm($("#reset"),()=>{
   $("#datamsg").textContent="All data cleared.";
 },"Click again to erase everything"));
 /* ---- cloud sync wiring ---- */
-function fillSbFields(){const u=$("#sb_url"),k=$("#sb_key");if(u)u.value=localStorage.getItem("im703_sb_url")||SUPABASE_URL||"";if(k)k.value=localStorage.getItem("im703_sb_key")||SUPABASE_KEY||"";}
+function fillSbFields(){
+  /* Advanced fields show ONLY a user's own override, never the baked-in shared keys. */
+  const u=$("#sb_url"),k=$("#sb_key");
+  if(u)u.value=localStorage.getItem("im703_sb_url")||"";
+  if(k)k.value=localStorage.getItem("im703_sb_key")||"";
+  const c=$("#sb_code"); if(c)c.value=uid();
+  const box=$("#syncidbox"); if(box)box.style.display=cloudOn()?"":"none";
+}
 async function initCloud(){
   if(!cloudOn()){setSync("Local only");return;}
   const row=await cloudPull();
@@ -1091,6 +1126,22 @@ const _sbClear=$("#sb_clear");
 if(_sbClear)_sbClear.addEventListener("click",()=>{
   localStorage.removeItem("im703_sb_url");localStorage.removeItem("im703_sb_key");
   fillSbFields();setSync("Local only");$("#sbmsg").textContent="Disconnected. This device is now local-only.";
+});
+const _sbCopy=$("#sb_copy");
+if(_sbCopy)_sbCopy.addEventListener("click",async()=>{
+  const code=uid();
+  try{ await navigator.clipboard.writeText(code); $("#sbmsg").textContent="Sync code copied: "+code; }
+  catch(e){ const c=$("#sb_code"); if(c){c.select();} $("#sbmsg").textContent="Your sync code is "+code+" \u2013 copy it manually."; }
+});
+const _sbCodeUse=$("#sb_codeuse");
+if(_sbCodeUse)_sbCodeUse.addEventListener("click",async()=>{
+  if(!cloudOn()){$("#sbmsg").textContent="Cloud backup isn't on for this app yet.";return;}
+  const code=setUid($("#sb_codein").value);
+  if(!code){$("#sbmsg").textContent="Enter the sync code from your other device.";return;}
+  $("#sb_code").value=code; $("#sbmsg").textContent="Loading your data\u2026";
+  const row=await cloudPull();
+  if(row&&row.data){ S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data); renderAll(); $("#sbmsg").textContent="Loaded the data for code "+code+"."; }
+  else { cloudPush(); $("#sbmsg").textContent="No data found for "+code+" yet \u2013 this device is now using that code."; }
 });
 fillSbFields();
 renderAll();
