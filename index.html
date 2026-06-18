@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Supabase JS client (used for Google login + per-account cloud sync) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     /* playful palette (navy/blue/accent kept as aliases for legacy inline refs) */
@@ -236,13 +238,52 @@
   .modalx{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;color:var(--muted);padding:0 4px}
   .modalx:hover{color:var(--ink)}
   @media(max-width:560px){.whours{min-width:52px}.wnum{min-width:46px}.tilescene{width:80px;height:58px}.brand{font-size:20px}.kpi .kv{font-size:16px}}
+  .lbsport{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .lbsport-h{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;margin-bottom:12px}
+  .lbsport-i{font-size:22px}
+  .lbkpis{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.lbkpis{grid-template-columns:1fr}}
+  .lbkpi-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
+  .lblist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .lbrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:14px}
+  .lbrow.lb-me{background:rgba(14,165,183,.10)}
+  .lbrank{width:22px;text-align:center;flex:none;font-size:14px}
+  .lbname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lbname em{color:var(--muted);font-style:normal;font-size:12px}
+  .lbval{font-variant-numeric:tabular-nums;font-weight:600;flex:none}
+  .lbempty{font-size:13px;color:var(--muted);padding:6px 8px}
 </style>
 </head>
 <body>
+<!-- LOGIN GATE -->
+<div id="authgate" style="display:none;position:fixed;inset:0;z-index:10000;background:linear-gradient(160deg,#6a5cff,#22b8ff);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;max-width:380px;width:100%;padding:30px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+    <div style="font-size:34px;line-height:1;display:flex;justify-content:center;gap:8px">
+      <span style="display:inline-block;transform:scaleX(-1)">&#127946;</span>
+      <span style="display:inline-block;transform:scaleX(-1)">&#128692;</span>
+      <span style="display:inline-block;transform:scaleX(-1)">&#127939;</span>
+    </div>
+    <h1 style="margin:12px 0 4px;font-size:24px;color:#28304a">Road to 70.3</h1>
+    <p style="margin:0 0 20px;color:#8089a3;font-size:14px;line-height:1.5">Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.</p>
+    <div id="gate_step1">
+      <input id="gate_name" type="text" autocomplete="nickname" maxlength="24" placeholder="Your name (shown on the leaderboard)" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none">
+      <input id="gate_email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none">
+      <button id="gate_send" class="btn primary" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;font-size:15px;padding:12px">Email me a sign-in link</button>
+    </div>
+    <div id="gate_step2" style="display:none">
+      <div style="font-size:30px;line-height:1;margin-bottom:6px">&#128231;</div>
+      <p style="margin:0 0 6px;color:#28304a;font-size:15px;font-weight:600">Check your inbox</p>
+      <p style="margin:0 0 14px;color:#8089a3;font-size:13px;line-height:1.5">We sent a sign-in link to <strong id="gate_sentto" style="color:#28304a">your email</strong>. Open it on this device and tap the link to finish signing in. It may take a minute &mdash; check spam too.</p>
+      <button id="gate_resend" class="btn" style="width:100%;justify-content:center;display:flex;font-size:14px;padding:10px">Resend link</button>
+      <button id="gate_back" style="margin-top:10px;background:none;border:none;color:#8089a3;font-size:12.5px;cursor:pointer;text-decoration:underline">Use a different email</button>
+    </div>
+    <p id="gatemsg" style="margin:14px 0 0;color:#b00020;font-size:12px;min-height:14px"></p>
+  </div>
+</div>
 <header>
   <div class="wrap">
     <div class="htop">
-      <div class="brand">Road to 70.3 <small>IRONMAN 70.3 La Quinta · Training Tracker</small></div>
+      <div class="brand"><span id="brandmain">Road to 70.3</span> <small>IRONMAN 70.3 La Quinta · Training Tracker</small></div>
       <div class="countdown"><div class="num" id="cd">—</div><div class="lbl">days to race day</div></div>
     </div>
     <div class="progwrap">
@@ -254,6 +295,7 @@
 <nav><div class="wrap">
   <button class="tab active" data-v="home">Dashboard</button>
   <button class="tab" data-v="plan">Plan</button>
+  <button class="tab" data-v="leaderboard">Leaderboard</button>
   <button id="gear" title="Settings · sync &amp; backup" aria-label="Settings, sync and backup">&#9881;</button>
 </div></nav>
 <main>
@@ -285,6 +327,19 @@
     <div id="homecards" class="homewrap"></div>
     <p class="note" id="homenote" style="text-align:center;margin-top:6px"></p>
   </section>
+  <!-- LEADERBOARD -->
+  <section class="view" id="leaderboard">
+    <div class="periodbar">
+      <span class="plabel">Leaderboard</span>
+      <select id="lb_mode">
+        <option value="week" selected>This week</option>
+        <option value="all">Overall (whole plan)</option>
+      </select>
+      <button class="btn" id="lb_refresh" style="padding:6px 12px;font-size:13px">Refresh</button>
+    </div>
+    <div id="lbbody" class="homewrap"></div>
+    <p class="note" id="lbnote" style="text-align:center;margin-top:6px"></p>
+  </section>
 </main>
 
 <!-- SETTINGS / SYNC / BACKUP (opened from the gear button) -->
@@ -303,38 +358,30 @@
       <p class="note" id="datamsg"></p>
     </div>
     <div class="card">
-      <strong>Cloud backup &amp; sync</strong>
-      <p class="note">Status: <strong id="syncstat2">Local only</strong>. When cloud backup is on, your progress is saved to a secure database automatically — so it's safe even if you clear your browser — and you can pick it up on any device using your sync code.</p>
-      <div id="syncidbox" style="display:none;margin-top:12px">
-        <p class="note" style="margin:0 0 6px"><strong>Your sync code</strong> — write this down. Enter it on another device (or after clearing your browser) to get your data back.</p>
-        <div class="row">
-          <input id="sb_code" readonly style="font-weight:700;letter-spacing:1px;flex:1;min-width:160px">
-          <button class="btn" id="sb_copy">Copy</button>
-        </div>
-        <p class="note" style="margin:14px 0 6px"><strong>On a new device?</strong> Enter an existing sync code to load that data here:</p>
-        <div class="row">
-          <input id="sb_codein" placeholder="e.g. ABC12-DE34F" style="flex:1;min-width:160px">
-          <button class="btn primary" id="sb_codeuse">Load my data</button>
-          <button class="btn" id="sb_sync">Sync now</button>
+      <strong>Account &amp; cloud sync</strong>
+      <p class="note">Status: <strong id="syncstat2">…</strong>. Sign in with your email (one-time link &amp; code, no password) to save your progress to your account so it's safe even if you clear your browser, and syncs automatically across all your devices.</p>
+      <div id="acct_out" style="display:none;margin-top:12px">
+        <div class="row" style="gap:8px">
+          <input id="acct_email_in" type="email" autocomplete="email" placeholder="you@example.com" style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #d6dbe8;border-radius:8px;font-size:14px;outline:none">
+          <button class="btn primary" id="btn_emaillink">Email me a link</button>
         </div>
       </div>
-      <details id="sbadv" style="margin-top:12px">
-        <summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">Advanced: use your own database</summary>
-        <p class="note" style="margin-top:8px">Point this device at a different Supabase project. Leave blank to use the shared one built into this app.</p>
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
-          <input id="sb_url" placeholder="Project URL  (e.g. https://abcd.supabase.co)">
-          <input id="sb_key" placeholder="anon public key (starts with eyJ...)">
+      <div id="acct_in" style="display:none;margin-top:12px">
+        <p class="note" style="margin:0 0 10px">Signed in as <strong id="acct_email">—</strong></p>
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="acct_name" type="text" maxlength="24" placeholder="Display name" style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #d6dbe8;border-radius:8px;font-size:14px;outline:none">
+          <button class="btn" id="btn_savename">Save name</button>
         </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn primary" id="sb_save">Connect / Save</button>
-          <button class="btn danger" id="sb_clear">Disconnect</button>
+        <div class="row">
+          <button class="btn" id="btn_sync">Sync now</button>
+          <button class="btn danger" id="btn_signout">Sign out</button>
         </div>
-      </details>
+      </div>
       <p class="note" id="sbmsg"></p>
     </div>
     <div class="card" style="margin-bottom:0">
       <strong>About</strong>
-      <p class="note">A self-contained tracker for your 18-month IRONMAN 70.3 La Quinta plan (77 weeks, 15 Jun 2026 → 5 Dec 2027). Your check-offs and workouts are saved automatically in this browser and stay between visits. They're stored per-browser and per-device, so to keep a safe copy or move to another device, use <strong>Export</strong> above. Confirm the race date when 2027 registration opens.</p>
+      <p class="note">A tracker for your 18-month IRONMAN 70.3 La Quinta plan (77 weeks, 15 Jun 2026 → 5 Dec 2027). Sign in with your email (one-time link &amp; code, no password) to save your check-offs and workouts to your account, so they sync across your devices and are safe even if you clear your browser. You can also export a copy anytime above. Confirm the race date when 2027 registration opens.</p>
     </div>
   </div>
 </div>
@@ -398,36 +445,29 @@ function showSaveWarn(){
   b.style.display="block";
 }
 function hideSaveWarn(){_saveWarned=false;const b=document.getElementById("savewarn");if(b)b.style.display="none";}
-S.checks=S.checks||{}; S.logs=S.logs||[]; S.tests=S.tests||{}; S.dayOrder=S.dayOrder||{}; S.itemOverride=S.itemOverride||{}; S.itemRemoved=S.itemRemoved||{}; S.itemAdded=S.itemAdded||{};
+S.checks=S.checks||{}; S.logs=S.logs||[]; S.tests=S.tests||{}; S.dayOrder=S.dayOrder||{}; S.itemOverride=S.itemOverride||{}; S.itemRemoved=S.itemRemoved||{}; S.itemAdded=S.itemAdded||{}; S.username=S.username||"";
 /* Ask the browser to keep this data and not evict it under storage pressure. */
 try{ if(navigator.storage&&navigator.storage.persist){navigator.storage.persist();} }catch(e){}
 /* Probe write so we warn immediately if this environment can't persist data. */
 try{ const _p="__im703_probe__"; localStorage.setItem(_p,"1"); if(localStorage.getItem(_p)!=="1"){showSaveWarn();} localStorage.removeItem(_p); }catch(e){ showSaveWarn(); }
 
-/* ===================== Cloud sync (Supabase) =====================
-   Optional. To make every device show the same data, paste your Supabase
-   Project URL and anon public key below (or via the Backup tab at runtime). */
-/* ===== CLOUD BACKEND (Supabase) =====================================
-   These two values point every visitor's tracker at ONE shared database
-   so their progress is saved to the cloud (not just their browser) and
-   can be restored on any device via their personal sync code below.
-   Fill these in with your Supabase Project URL + anon public key.       */
+/* ===== CLOUD BACKEND (Supabase Auth + per-account database) ==========
+   Users sign in with Google; each account's progress is stored in its own
+   row of the "tracker" table (row id = the user's auth UID) and protected
+   by row-level security so a user can only read/write their own data.
+   SUPABASE_KEY is the publishable key \u2013 safe to ship in a public file.   */
 const SUPABASE_URL = "https://fcmskguzqbuszzxmmbao.supabase.co";
-const SUPABASE_KEY = "sb_publishable_VQeGOjkkLlkE0_DuZfMapQ_flzpFzuT";  /* publishable key \u2013 safe in public files */
-function sbUrl(){return (localStorage.getItem("im703_sb_url")||SUPABASE_URL||"").trim().replace(/\/+$/,"");}
-function sbKey(){return (localStorage.getItem("im703_sb_key")||SUPABASE_KEY||"").trim();}
-function cloudOn(){return !!(sbUrl()&&sbKey());}
-/* Build auth headers. Legacy "anon" keys are JWTs (eyJ...) and PostgREST wants
-   them in Authorization: Bearer. New publishable keys (sb_publishable_...) are
-   NOT JWTs \u2013 sending them as Bearer makes PostgREST reject them, so for those
-   we send only the apikey header and let the gateway resolve the anon role. */
-function sbHeaders(extra){const k=sbKey();const h=Object.assign({apikey:k},extra||{});if(/^eyJ/.test(k))h.Authorization="Bearer "+k;return h;}
-/* Each visitor gets a private random sync code = their row id in the shared
-   table. It lives in their browser; they can copy it to use on other devices
-   or paste an existing one to pull their data down. No login/passwords. */
-function genCode(){const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<10;i++)s+=a[Math.floor(Math.random()*a.length)];return s.slice(0,5)+"-"+s.slice(5);}
-function uid(){let u=localStorage.getItem("im703_uid");if(!u){u=genCode();localStorage.setItem("im703_uid",u);}return u;}
-function setUid(code){const c=(code||"").trim().toUpperCase();if(c)localStorage.setItem("im703_uid",c);return c;}
+const SUPABASE_KEY = "sb_publishable_VQeGOjkkLlkE0_DuZfMapQ_flzpFzuT";
+const sbClient = (window.supabase && SUPABASE_URL && SUPABASE_KEY)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY,
+      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})
+  : null;
+let SESSION = null;
+function authUser(){ return (SESSION && SESSION.user) ? SESSION.user : null; }
+function isGuest(){ return localStorage.getItem("im703_guest")==="1"; }
+/* Cloud is active only when a Supabase client exists AND the user is logged in. */
+function cloudOn(){ return !!(sbClient && authUser()); }
+function defaultState(){ return {checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{},username:""}; }
 let _syncTimer=null;
 function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
   let pill=document.getElementById("syncpill");
@@ -435,34 +475,160 @@ function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.ge
     pill.style.cssText="position:fixed;top:8px;right:8px;z-index:9998;background:rgba(20,30,50,.85);color:#fff;font-size:11px;padding:4px 9px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none";
     document.body.appendChild(pill);}
   pill.textContent=txt; pill.style.display=cloudOn()?"block":"none";
-  const box=document.getElementById("syncidbox"); if(box)box.style.display=cloudOn()?"":"none";
-  const c=document.getElementById("sb_code"); if(c&&!c.value)c.value=uid();
 }
 let _lastCloudErr="";
 function showCloudErr(e){ _lastCloudErr=(e&&e.message)?e.message:String(e); try{console.warn("[cloud]",_lastCloudErr);}catch(_){}; const m=document.getElementById("sbmsg"); if(m)m.textContent="Cloud error: "+_lastCloudErr; }
 async function cloudPull(){
   if(!cloudOn())return null;
   try{ setSync("Syncing\u2026");
-    const r=await fetch(sbUrl()+"/rest/v1/tracker?id=eq."+encodeURIComponent(uid())+"&select=data,updated_at",
-      {headers:sbHeaders()});
-    if(!r.ok){const t=await r.text().catch(()=>"" ); throw new Error("HTTP "+r.status+(t?" \u2013 "+t.slice(0,200):""));}
-    const rows=await r.json(); setSync("Synced \u2713");
-    return (rows&&rows[0])?rows[0]:null;
-  }catch(e){ setSync("Offline \u2013 local only"); showCloudErr(e); return null; }
+    const {data,error}=await sbClient.from("tracker").select("data,updated_at").eq("id",authUser().id).maybeSingle();
+    if(error) throw error;
+    setSync("Synced \u2713"); return data||null;
+  }catch(e){ setSync("Offline \u2013 not saved"); showCloudErr(e); return null; }
 }
 async function cloudPush(){
   if(!cloudOn())return;
   try{ setSync("Saving\u2026");
-    const body=[{id:uid(),data:S,updated_at:new Date().toISOString()}];
-    const r=await fetch(sbUrl()+"/rest/v1/tracker",
-      {method:"POST",
-       headers:sbHeaders({"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"}),
-       body:JSON.stringify(body)});
-    if(!r.ok){const t=await r.text().catch(()=>"" ); throw new Error("HTTP "+r.status+(t?" \u2013 "+t.slice(0,200):""));}
+    const {error}=await sbClient.from("tracker").upsert({id:authUser().id,data:S,updated_at:new Date().toISOString()});
+    if(error) throw error;
     setSync("Synced \u2713"); const m=document.getElementById("sbmsg"); if(m&&/^Cloud error/.test(m.textContent))m.textContent="Synced \u2713";
-  }catch(e){ setSync("Offline \u2013 saved on device"); showCloudErr(e); }
+    pushLeaderboard();
+  }catch(e){ setSync("Offline \u2013 not saved"); showCloudErr(e); }
 }
 function queueCloud(){ if(!cloudOn())return; clearTimeout(_syncTimer); _syncTimer=setTimeout(cloudPush,800); }
+/* ---- leaderboard: shared cross-user stats ---- */
+function computeMyStats(){
+  const sports=["swim","bike","run"], cw=currentWeek(), st={};
+  sports.forEach(sp=>{ st[sp]={distWeek:0,distAll:0,paceWeek:null,paceAll:null}; });
+  (S.logs||[]).forEach(l=>{
+    if(!st[l.sport])return;
+    const km=toKm(l.dist,l.unit), s=st[l.sport], inWk=weekOfDate(l.date)===cw;
+    if(km>0){ s.distAll+=km; if(inWk)s.distWeek+=km;
+      if(l.dur>0){ const pace=l.dur/km;
+        if(s.paceAll===null||pace<s.paceAll)s.paceAll=pace;
+        if(inWk&&(s.paceWeek===null||pace<s.paceWeek))s.paceWeek=pace; } }
+  });
+  return st;
+}
+async function pushLeaderboard(){
+  if(!cloudOn())return;
+  try{
+    const uname=((S.username||"").trim())||"Athlete";
+    await sbClient.from("leaderboard").upsert({id:authUser().id,username:uname,stats:computeMyStats(),updated_at:new Date().toISOString()});
+  }catch(e){ showCloudErr(e); }
+}
+function updateHero(){
+  const n=(S.username||"").trim(), el=document.getElementById("brandmain");
+  if(el)el.textContent = n ? (n+"\u2019s Road to 70.3") : "Road to 70.3";
+}
+/* ---- leaderboard ---- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const SPORT_META={swim:{icon:"\uD83C\uDFCA",label:"Swim",color:"#0ea5b7"},bike:{icon:"\uD83D\uDEB4",label:"Bike",color:"#e8830c"},run:{icon:"\uD83C\uDFC3",label:"Run",color:"#16a34a"}};
+function fmtDist(km){ if(km==null||!isFinite(km)||km<=0)return "0 km"; return (km>=10?km.toFixed(1):km.toFixed(2)).replace(/\.?0+$/,"")+" km"; }
+function fmtPace(sport,minPerKm){
+  if(minPerKm==null||!isFinite(minPerKm)||minPerKm<=0)return "\u2014";
+  if(sport==="bike"){ const kmh=60/minPerKm; return kmh.toFixed(1)+" km/h"; }
+  let perUnit, unit;
+  if(sport==="swim"){ perUnit=minPerKm/10; unit="/100m"; } // min per 100m (1km=10x100m)
+  else { perUnit=minPerKm; unit="/km"; }
+  const m=Math.floor(perUnit), s=Math.round((perUnit-m)*60);
+  let mm=m, ss=s; if(ss===60){ mm+=1; ss=0; }
+  return mm+":"+String(ss).padStart(2,"0")+" "+unit;
+}
+let _lbRows=null;
+async function fetchLeaderboard(){
+  if(!cloudOn())return null;
+  const {data,error}=await sbClient.from("leaderboard").select("id,username,stats");
+  if(error)throw error;
+  return data||[];
+}
+function rankRows(rows,sport,distKey,paceKey,myId){
+  const dist=rows.map(r=>({id:r.id,name:r.username||"Athlete",v:(r.stats&&r.stats[sport]&&r.stats[sport][distKey])||0}))
+    .filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const pace=rows.map(r=>({id:r.id,name:r.username||"Athlete",v:(r.stats&&r.stats[sport]&&r.stats[sport][paceKey])}))
+    .filter(x=>x.v!=null&&x.v>0).sort((a,b)=>a.v-b.v);
+  return {dist,pace};
+}
+function lbTable(title,rows,sport,fmt,myId){
+  if(!rows.length)return `<div class="lbkpi"><div class="lbkpi-h">${title}</div><div class="lbempty">No data logged yet.</div></div>`;
+  let h=`<div class="lbkpi"><div class="lbkpi-h">${title}</div><ol class="lblist">`;
+  rows.slice(0,5).forEach((x,i)=>{
+    const me=x.id===myId?' lb-me':'';
+    const medal=i===0?"\uD83E\uDD47":i===1?"\uD83E\uDD48":i===2?"\uD83E\uDD49":(i+1)+".";
+    h+=`<li class="lbrow${me}"><span class="lbrank">${medal}</span><span class="lbname">${esc(x.name)}${me?' <em>(you)</em>':''}</span><span class="lbval">${fmt(x.v)}</span></li>`;
+  });
+  h+="</ol></div>";
+  return h;
+}
+async function renderLeaderboard(){
+  const body=document.getElementById("lbbody"), note=document.getElementById("lbnote");
+  if(!body)return;
+  if(!cloudOn()){ body.innerHTML='<p class="note" style="text-align:center;padding:24px 0">Sign in to see the leaderboard.</p>'; if(note)note.textContent=""; return; }
+  const modeEl=document.getElementById("lb_mode"), mode=modeEl?modeEl.value:"week";
+  const distKey=mode==="week"?"distWeek":"distAll", paceKey=mode==="week"?"paceWeek":"paceAll";
+  body.innerHTML='<p class="note" style="text-align:center;padding:24px 0">Loading…</p>';
+  try{
+    await pushLeaderboard();
+    _lbRows=await fetchLeaderboard();
+  }catch(e){ body.innerHTML='<p class="note" style="text-align:center;padding:24px 0;color:#b00020">Could not load leaderboard.</p>'; showCloudErr(e); return; }
+  const rows=_lbRows||[], myId=(cloudOn()&&authUser())?authUser().id:null;
+  let html="";
+  ["swim","bike","run"].forEach(sp=>{
+    const m=SPORT_META[sp], r=rankRows(rows,sp,distKey,paceKey,myId);
+    html+=`<div class="lbsport"><div class="lbsport-h" style="color:${m.color}"><span class="lbsport-i">${m.icon}</span>${m.label}</div><div class="lbkpis">`;
+    html+=lbTable("Most distance",r.dist,sp,fmtDist,myId);
+    html+=lbTable("Fastest pace",r.pace,sp,v=>fmtPace(sp,v),myId);
+    html+="</div></div>";
+  });
+  body.innerHTML=html;
+  if(note)note.textContent=(mode==="week"?"This week":"Whole plan")+" \u00b7 "+rows.length+" athlete"+(rows.length===1?"":"s")+" \u00b7 ranking updates when you log workouts.";
+}
+/* ---- auth actions (passwordless email: magic link + 6-digit code) ---- */
+let _pendingEmail="";
+function gateMsg(t,err){ const g=document.getElementById("gatemsg"); if(g){ g.style.color=err===false?"#1a8f3c":"#b00020"; g.textContent=t||""; } }
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+async function sendEmailLink(email){
+  if(!sbClient){ gateMsg("Login isn't configured yet."); return; }
+  email=(email||"").trim();
+  const nameEl=document.getElementById("gate_name");
+  const name=(nameEl?nameEl.value:"").trim().slice(0,24);
+  if(!name){ gateMsg("Please enter your name."); if(nameEl)nameEl.focus(); return; }
+  if(!validEmail(email)){ gateMsg("Please enter a valid email address."); return; }
+  try{ localStorage.setItem("im703_pending_name",name); }catch(_){}
+  const btn=document.getElementById("gate_send"); if(btn){ btn.disabled=true; btn.textContent="Sending…"; }
+  try{
+    const {error}=await sbClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true,data:{username:name}}});
+    if(error) throw error;
+    _pendingEmail=email;
+    const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2"), st=document.getElementById("gate_sentto");
+    if(st)st.textContent=email;
+    if(s1)s1.style.display="none"; if(s2)s2.style.display="";
+    gateMsg("");
+  }catch(e){ gateMsg((e&&e.message)||"Couldn't send the email. Try again."); showCloudErr(e); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="Email me a sign-in link"; } }
+}
+function gateBackToEmail(){
+  const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2");
+  if(s1)s1.style.display=""; if(s2)s2.style.display="none";
+  _pendingEmail=""; gateMsg("");
+  const ei=document.getElementById("gate_email"); if(ei)ei.focus();
+}
+async function signOutUser(){
+  try{ if(sbClient) await sbClient.auth.signOut(); }catch(e){}
+  localStorage.removeItem("im703_guest"); SESSION=null; location.reload();
+}
+function continueAsGuest(){ localStorage.setItem("im703_guest","1"); updateAuthUI(); }
+function updateAuthUI(){
+  const loggedIn=!!authUser(), gate=document.getElementById("authgate");
+  if(gate) gate.style.display=(loggedIn||isGuest()||!sbClient)?"none":"flex";
+  const out=document.getElementById("acct_out"), inn=document.getElementById("acct_in"), em=document.getElementById("acct_email");
+  if(out) out.style.display=loggedIn?"none":"";
+  if(inn) inn.style.display=loggedIn?"":"none";
+  if(em&&loggedIn) em.textContent=(authUser().email)||(authUser().user_metadata&&authUser().user_metadata.email)||"your account";
+  const nm=document.getElementById("acct_name"); if(nm&&loggedIn&&document.activeElement!==nm) nm.value=(S.username||"");
+  setSync(loggedIn?"Synced \u2713":(isGuest()?"This device only":"Not signed in"));
+  updateHero();
+}
 
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
@@ -1065,6 +1231,7 @@ $$(".tab").forEach(t=>t.addEventListener("click",()=>{
   $$(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");
   $$(".view").forEach(v=>v.classList.remove("active"));$("#"+t.dataset.v).classList.add("active");
   if(t.dataset.v==="home")renderHome();
+  if(t.dataset.v==="leaderboard")renderLeaderboard();
 }));
 /* ---- Dashboard period controls ---- */
 populateDashPickers();
@@ -1092,69 +1259,77 @@ $("#export").addEventListener("click",exportData);
 $("#importbtn").addEventListener("click",()=>$("#importfile").click());
 $("#importfile").addEventListener("change",e=>{if(e.target.files[0])importData(e.target.files[0]);});
 $("#reset").addEventListener("click",()=>armConfirm($("#reset"),()=>{
-  S={checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}};save();renderAll();
+  const _un=S.username||"";S=defaultState();S.username=_un;save();renderAll();updateHero();
   $("#datamsg").textContent="All data cleared.";
 },"Click again to erase everything"));
-/* ---- cloud sync wiring ---- */
-function fillSbFields(){
-  /* Advanced fields show ONLY a user's own override, never the baked-in shared keys. */
-  const u=$("#sb_url"),k=$("#sb_key");
-  if(u)u.value=localStorage.getItem("im703_sb_url")||"";
-  if(k)k.value=localStorage.getItem("im703_sb_key")||"";
-  const c=$("#sb_code"); if(c)c.value=uid();
-  const box=$("#syncidbox"); if(box)box.style.display=cloudOn()?"":"none";
+/* ---- auth + cloud wiring (passwordless email) ---- */
+const _gsend=$("#gate_send"); if(_gsend)_gsend.addEventListener("click",()=>sendEmailLink(($("#gate_email")||{}).value));
+const _gemail=$("#gate_email"); if(_gemail)_gemail.addEventListener("keydown",e=>{if(e.key==="Enter")sendEmailLink(_gemail.value);});
+const _gresend=$("#gate_resend"); if(_gresend)_gresend.addEventListener("click",()=>sendEmailLink(_pendingEmail||($("#gate_email")||{}).value));
+const _gback=$("#gate_back"); if(_gback)_gback.addEventListener("click",gateBackToEmail);
+const _belink=$("#btn_emaillink"); if(_belink)_belink.addEventListener("click",async()=>{
+  const ei=$("#acct_email_in"), email=ei?ei.value.trim():"";
+  if(!validEmail(email)){$("#sbmsg").textContent="Enter a valid email above.";return;}
+  if(!sbClient){$("#sbmsg").textContent="Login isn't configured yet.";return;}
+  try{
+    const {error}=await sbClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
+    if(error) throw error;
+    $("#sbmsg").textContent="Sign-in link sent to "+email+". Check your inbox.";
+  }catch(e){ $("#sbmsg").textContent=(e&&e.message)||"Couldn't send the email."; showCloudErr(e); }
+});
+const _gname=$("#gate_name"); if(_gname)_gname.addEventListener("keydown",e=>{if(e.key==="Enter"){const ge=$("#gate_email");if(ge)ge.focus();}});
+const _savename=$("#btn_savename"); if(_savename)_savename.addEventListener("click",()=>{
+  const ni=$("#acct_name"); const v=(ni?ni.value:"").trim().slice(0,24);
+  S.username=v; save(); updateHero(); updateAuthUI();
+  if($("#sbmsg"))$("#sbmsg").textContent=v?("Display name saved."):("Display name cleared.");
+  if(cloudOn())pushLeaderboard();
+});
+const _lbmode=$("#lb_mode"); if(_lbmode)_lbmode.addEventListener("change",renderLeaderboard);
+const _lbref=$("#lb_refresh"); if(_lbref)_lbref.addEventListener("click",renderLeaderboard);
+const _signout=$("#btn_signout"); if(_signout)_signout.addEventListener("click",signOutUser);
+const _btnSync=$("#btn_sync");
+if(_btnSync)_btnSync.addEventListener("click",async()=>{
+  if(!cloudOn()){$("#sbmsg").textContent="Sign in first.";return;}
+  const row=await cloudPull();
+  if(row&&row.data){ S=Object.assign(defaultState(),row.data); renderAll(); $("#sbmsg").textContent="Pulled latest from your account."; }
+  else { cloudPush(); $("#sbmsg").textContent="Saved this device's data to your account."; }
+});
+/* When auth state resolves (or changes), update the UI and load the account's data. */
+function resolveUsername(){
+  const u=authUser(); if(!u)return "";
+  const meta=u.user_metadata||{};
+  let pend=""; try{ pend=localStorage.getItem("im703_pending_name")||""; }catch(_){}
+  const name=(meta.username||meta.name||pend||(u.email?u.email.split("@")[0]:"")||"").toString().trim().slice(0,24);
+  try{ localStorage.removeItem("im703_pending_name"); }catch(_){}
+  return name;
 }
-async function initCloud(){
-  if(!cloudOn()){setSync("Local only");return;}
-  const row=await cloudPull();
-  if(row&&row.data){ S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data); renderAll(); }
-  else { cloudPush(); } /* seed the cloud with what we have */
+async function afterAuth(){
+  updateAuthUI();
+  if(authUser()){
+    const resolved=resolveUsername();
+    const row=await cloudPull();
+    if(row&&row.data){ S=Object.assign(defaultState(),row.data); }
+    if(resolved && !((S.username||"").trim())) S.username=resolved;
+    save(); renderAll(); updateHero();
+    if(!(row&&row.data)){ cloudPush(); } /* first login for this account \u2013 seed it */
+    else { pushLeaderboard(); }
+  }
 }
-const _sbSave=$("#sb_save");
-if(_sbSave)_sbSave.addEventListener("click",async()=>{
-  const u=$("#sb_url").value.trim().replace(/\/+$/,""), k=$("#sb_key").value.trim();
-  if(!u||!k){$("#sbmsg").textContent="Enter both the Project URL and the anon key.";return;}
-  localStorage.setItem("im703_sb_url",u); localStorage.setItem("im703_sb_key",k);
-  $("#sbmsg").textContent="Connecting\u2026";
-  const row=await cloudPull();
-  if(row===null && !cloudOn()){$("#sbmsg").textContent="Could not connect \u2013 check the values.";return;}
-  if(row&&row.data){ if(confirm("Cloud data found. Load it onto this device? (Cancel keeps this device's data and uploads it instead.)")){S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data);renderAll();} else {cloudPush();} }
-  else { cloudPush(); }
-  $("#sbmsg").textContent="Connected. This device now syncs.";
-});
-const _sbSync=$("#sb_sync");
-if(_sbSync)_sbSync.addEventListener("click",async()=>{
-  if(!cloudOn()){$("#sbmsg").textContent="Not connected yet.";return;}
-  const row=await cloudPull();
-  if(row&&row.data){S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data);renderAll();$("#sbmsg").textContent="Pulled latest from cloud.";}
-  else {cloudPush();$("#sbmsg").textContent="Cloud was empty \u2013 uploaded this device's data.";}
-});
-const _sbClear=$("#sb_clear");
-if(_sbClear)_sbClear.addEventListener("click",()=>{
-  localStorage.removeItem("im703_sb_url");localStorage.removeItem("im703_sb_key");
-  fillSbFields();setSync("Local only");$("#sbmsg").textContent="Disconnected. This device is now local-only.";
-});
-const _sbCopy=$("#sb_copy");
-if(_sbCopy)_sbCopy.addEventListener("click",async()=>{
-  const code=uid();
-  try{ await navigator.clipboard.writeText(code); $("#sbmsg").textContent="Sync code copied: "+code; }
-  catch(e){ const c=$("#sb_code"); if(c){c.select();} $("#sbmsg").textContent="Your sync code is "+code+" \u2013 copy it manually."; }
-});
-const _sbCodeUse=$("#sb_codeuse");
-if(_sbCodeUse)_sbCodeUse.addEventListener("click",async()=>{
-  if(!cloudOn()){$("#sbmsg").textContent="Cloud backup isn't on for this app yet.";return;}
-  const code=setUid($("#sb_codein").value);
-  if(!code){$("#sbmsg").textContent="Enter the sync code from your other device.";return;}
-  $("#sb_code").value=code; $("#sbmsg").textContent="Loading your data\u2026";
-  const row=await cloudPull();
-  if(row&&row.data){ S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},row.data); renderAll(); $("#sbmsg").textContent="Loaded the data for code "+code+"."; }
-  else { cloudPush(); $("#sbmsg").textContent="No data found for "+code+" yet \u2013 this device is now using that code."; }
-});
-fillSbFields();
-renderAll();
-initCloud();
-// open current week on load
-setTimeout(()=>{const el=$("#wk"+currentWeek());if(el)el.classList.add("open");},60);
+async function boot(){
+  renderAll();
+  setTimeout(()=>{const el=$("#wk"+currentWeek());if(el)el.classList.add("open");},60);
+  if(sbClient){
+    sbClient.auth.onAuthStateChange((event,session)=>{
+      SESSION=session;
+      if(event==="SIGNED_IN"||event==="INITIAL_SESSION"){ afterAuth(); }
+      else if(event==="SIGNED_OUT"){ updateAuthUI(); }
+      else { updateAuthUI(); }
+    });
+  } else {
+    updateAuthUI(); /* library failed to load \u2013 fall back to local-only app */
+  }
+}
+boot();
 </script>
 </body>
 </html>
