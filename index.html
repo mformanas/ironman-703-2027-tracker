@@ -238,19 +238,20 @@
   .modalx{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;color:var(--muted);padding:0 4px}
   .modalx:hover{color:var(--ink)}
   @media(max-width:560px){.whours{min-width:52px}.wnum{min-width:46px}.tilescene{width:80px;height:58px}.brand{font-size:20px}.kpi .kv{font-size:16px}}
-  .lbsport{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .lbsport{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04);overflow:hidden}
   .lbsport-h{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;margin-bottom:12px}
   .lbsport-i{font-size:22px}
   .lbkpis{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   @media(max-width:560px){.lbkpis{grid-template-columns:1fr}}
+  .lbkpi{min-width:0}
   .lbkpi-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
   .lblist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
-  .lbrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:14px}
+  .lbrow{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;font-size:14px;min-width:0}
   .lbrow.lb-me{background:rgba(14,165,183,.10)}
-  .lbrank{width:22px;text-align:center;flex:none;font-size:14px}
-  .lbname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lbrank{width:20px;text-align:center;flex:none;font-size:14px}
+  .lbname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .lbname em{color:var(--muted);font-style:normal;font-size:12px}
-  .lbval{font-variant-numeric:tabular-nums;font-weight:600;flex:none}
+  .lbval{font-variant-numeric:tabular-nums;font-weight:600;flex:0 0 auto;white-space:nowrap;font-size:13px}
   .lbempty{font-size:13px;color:var(--muted);padding:6px 8px}
 </style>
 </head>
@@ -263,12 +264,13 @@
       <span style="display:inline-block;transform:scaleX(-1)">&#128692;</span>
       <span style="display:inline-block;transform:scaleX(-1)">&#127939;</span>
     </div>
-    <h1 style="margin:12px 0 4px;font-size:24px;color:#28304a">Road to 70.3</h1>
-    <p style="margin:0 0 20px;color:#8089a3;font-size:14px;line-height:1.5">Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.</p>
+    <h1 id="gate_title" style="margin:12px 0 4px;font-size:24px;color:#28304a">Road to 70.3</h1>
+    <p id="gate_intro" style="margin:0 0 20px;color:#8089a3;font-size:14px;line-height:1.5">Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.</p>
     <div id="gate_step1">
-      <input id="gate_name" type="text" autocomplete="nickname" maxlength="24" placeholder="Your name (shown on the leaderboard)" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none">
+      <div id="gate_namewrap"><input id="gate_name" type="text" autocomplete="nickname" maxlength="24" placeholder="Your name (shown on the leaderboard)" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none"></div>
       <input id="gate_email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none">
       <button id="gate_send" class="btn primary" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;font-size:15px;padding:12px">Email me a sign-in link</button>
+      <button id="gate_toggle" style="margin-top:12px;background:none;border:none;color:#6a5cff;font-size:13px;cursor:pointer;text-decoration:underline">New here? Create an account</button>
     </div>
     <div id="gate_step2" style="display:none">
       <div style="font-size:30px;line-height:1;margin-bottom:6px">&#128231;</div>
@@ -398,12 +400,12 @@
           <option value="strength">Strength</option><option value="brick">Brick</option></select></div>
         <div class="fld"><label>Date</label><input type="date" id="ql_date"></div>
         <div class="fld"><label>Duration (min)</label><input type="number" id="ql_dur" min="0" step="5" placeholder="e.g. 60"></div>
-        <div class="fld"><label>Distance</label><input type="number" id="ql_dist" min="0" step="0.1" placeholder="optional"></div>
-        <div class="fld"><label>Unit</label><select id="ql_unit"><option>mi</option><option>km</option><option>m</option><option>yd</option></select></div>
+        <div class="fld" id="ql_distfld"><label>Distance</label><input type="number" id="ql_dist" min="0" step="0.1" placeholder="optional"></div>
+        <div class="fld" id="ql_unitfld"><label>Unit</label><select id="ql_unit"><option>mi</option><option>km</option><option>m</option><option>yd</option></select></div>
         <div class="fld" id="ql_envfld"><label>Environment</label><select id="ql_env"><option>Outdoor</option><option>Indoor</option></select></div>
         <div class="fld" id="ql_elevfld"><label>Elevation gain</label><input type="number" id="ql_elev" min="0" step="1" placeholder="optional"></div>
         <div class="fld" id="ql_elevunitfld"><label>Elev. unit</label><select id="ql_elevunit"><option>ft</option><option>m</option></select></div>
-        <div class="fld"><label>Effort</label><select id="ql_effort">
+        <div class="fld" id="ql_effortfld"><label>Effort</label><select id="ql_effort">
           <option>Easy (Z1&#8211;2)</option><option>Tempo (Z3)</option><option>Threshold (Z4)</option><option>Hard (Z5)</option></select></div>
         <div class="fld" style="grid-column:1/-1"><label>Notes</label><input type="text" id="ql_notes" placeholder="How did it feel? Fuel? Anything to remember&#8230;"></div>
       </div>
@@ -587,17 +589,54 @@ async function renderLeaderboard(){
 let _pendingEmail="";
 function gateMsg(t,err){ const g=document.getElementById("gatemsg"); if(g){ g.style.color=err===false?"#1a8f3c":"#b00020"; g.textContent=t||""; } }
 function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+/* Gate has two modes: "signin" (returning \u2013 email remembered, no name asked)
+   and "signup" (first time \u2013 ask for a name). It opens in whichever fits. */
+let _gateMode="signup";
+function rememberedEmail(){ try{ return localStorage.getItem("im703_last_email")||""; }catch(_){ return ""; } }
+function setGateMode(mode,email){
+  _gateMode=mode;
+  const title=document.getElementById("gate_title"), intro=document.getElementById("gate_intro"),
+        nameWrap=document.getElementById("gate_namewrap"), emailEl=document.getElementById("gate_email"),
+        sendBtn=document.getElementById("gate_send"), toggle=document.getElementById("gate_toggle");
+  if(mode==="signin"){
+    if(title)title.textContent="Welcome back";
+    if(intro)intro.innerHTML="Sign in with your email &mdash; we'll send a one-time link to confirm it's you. No password needed.";
+    if(nameWrap)nameWrap.style.display="none";
+    if(emailEl)emailEl.value=email||rememberedEmail();
+    if(sendBtn)sendBtn.textContent="Email me a sign-in link";
+    if(toggle)toggle.textContent="Use a different account";
+  } else {
+    if(title)title.textContent="Road to 70.3";
+    if(intro)intro.innerHTML="Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.";
+    if(nameWrap)nameWrap.style.display="";
+    if(emailEl&&!email)emailEl.value="";
+    if(sendBtn)sendBtn.textContent="Email me a sign-in link";
+    if(toggle)toggle.textContent=rememberedEmail()?"Already have an account? Sign in":"";
+  }
+  gateMsg("");
+}
+function initGate(){
+  const last=rememberedEmail();
+  setGateMode(last?"signin":"signup", last);
+}
+function toggleGateMode(){
+  setGateMode(_gateMode==="signin"?"signup":"signin", _gateMode==="signin"?"":rememberedEmail());
+  const f=document.getElementById(_gateMode==="signup"?"gate_name":"gate_email"); if(f)f.focus();
+}
 async function sendEmailLink(email){
   if(!sbClient){ gateMsg("Login isn't configured yet."); return; }
   email=(email||"").trim();
   const nameEl=document.getElementById("gate_name");
-  const name=(nameEl?nameEl.value:"").trim().slice(0,24);
-  if(!name){ gateMsg("Please enter your name."); if(nameEl)nameEl.focus(); return; }
+  let name=(nameEl?nameEl.value:"").trim().slice(0,24);
+  if(_gateMode==="signup" && !name){ gateMsg("Please enter your name."); if(nameEl)nameEl.focus(); return; }
   if(!validEmail(email)){ gateMsg("Please enter a valid email address."); return; }
-  try{ localStorage.setItem("im703_pending_name",name); }catch(_){}
+  if(_gateMode==="signin" && !name){ try{ name=localStorage.getItem("im703_last_name")||""; }catch(_){} }
+  try{ if(name)localStorage.setItem("im703_pending_name",name); localStorage.setItem("im703_last_email",email); if(name)localStorage.setItem("im703_last_name",name); }catch(_){}
   const btn=document.getElementById("gate_send"); if(btn){ btn.disabled=true; btn.textContent="Sending…"; }
   try{
-    const {error}=await sbClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true,data:{username:name}}});
+    const opts={emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true};
+    if(name)opts.data={username:name};
+    const {error}=await sbClient.auth.signInWithOtp({email,options:opts});
     if(error) throw error;
     _pendingEmail=email;
     const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2"), st=document.getElementById("gate_sentto");
@@ -611,6 +650,7 @@ function gateBackToEmail(){
   const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2");
   if(s1)s1.style.display=""; if(s2)s2.style.display="none";
   _pendingEmail=""; gateMsg("");
+  if(typeof initGate==="function") initGate();
   const ei=document.getElementById("gate_email"); if(ei)ei.focus();
 }
 async function signOutUser(){
@@ -619,14 +659,15 @@ async function signOutUser(){
 }
 function continueAsGuest(){ localStorage.setItem("im703_guest","1"); updateAuthUI(); }
 function updateAuthUI(){
+  try{ localStorage.removeItem("im703_guest"); }catch(_){}  // guest mode retired
   const loggedIn=!!authUser(), gate=document.getElementById("authgate");
-  if(gate) gate.style.display=(loggedIn||isGuest()||!sbClient)?"none":"flex";
+  if(gate){ const show=!(loggedIn||!sbClient); if(show && gate.style.display!=="flex"){ const s1=document.getElementById("gate_step1"),s2=document.getElementById("gate_step2"); if(s2&&s2.style.display!=="none"){} else if(typeof initGate==="function") initGate(); } gate.style.display=show?"flex":"none"; }
   const out=document.getElementById("acct_out"), inn=document.getElementById("acct_in"), em=document.getElementById("acct_email");
   if(out) out.style.display=loggedIn?"none":"";
   if(inn) inn.style.display=loggedIn?"":"none";
   if(em&&loggedIn) em.textContent=(authUser().email)||(authUser().user_metadata&&authUser().user_metadata.email)||"your account";
   const nm=document.getElementById("acct_name"); if(nm&&loggedIn&&document.activeElement!==nm) nm.value=(S.username||"");
-  setSync(loggedIn?"Synced \u2713":(isGuest()?"This device only":"Not signed in"));
+  setSync(loggedIn?"Synced \u2713":"Not signed in");
   updateHero();
 }
 
@@ -943,8 +984,13 @@ function reflectCheck(id){
 }
 // Show/hide Environment + Elevation fields depending on the chosen sport.
 function syncQlSportFields(sport){
-  $("#ql_envfld").style.display=["swim","bike","run"].includes(sport)?"":"none";
-  const showElev=sport!=="swim";
+  const isStrength=sport==="strength";
+  // Strength = time only: hide distance, unit, environment, elevation and effort.
+  $("#ql_distfld").style.display=isStrength?"none":"";
+  $("#ql_unitfld").style.display=isStrength?"none":"";
+  $("#ql_effortfld").style.display=isStrength?"none":"";
+  $("#ql_envfld").style.display=(!isStrength&&["swim","bike","run"].includes(sport))?"":"none";
+  const showElev=!isStrength&&sport!=="swim";
   $("#ql_elevfld").style.display=showElev?"":"none";
   $("#ql_elevunitfld").style.display=showElev?"":"none";
 }
@@ -1267,6 +1313,7 @@ const _gsend=$("#gate_send"); if(_gsend)_gsend.addEventListener("click",()=>send
 const _gemail=$("#gate_email"); if(_gemail)_gemail.addEventListener("keydown",e=>{if(e.key==="Enter")sendEmailLink(_gemail.value);});
 const _gresend=$("#gate_resend"); if(_gresend)_gresend.addEventListener("click",()=>sendEmailLink(_pendingEmail||($("#gate_email")||{}).value));
 const _gback=$("#gate_back"); if(_gback)_gback.addEventListener("click",gateBackToEmail);
+const _gtoggle=$("#gate_toggle"); if(_gtoggle)_gtoggle.addEventListener("click",toggleGateMode);
 const _belink=$("#btn_emaillink"); if(_belink)_belink.addEventListener("click",async()=>{
   const ei=$("#acct_email_in"), email=ei?ei.value.trim():"";
   if(!validEmail(email)){$("#sbmsg").textContent="Enter a valid email above.";return;}
@@ -1307,6 +1354,8 @@ async function afterAuth(){
   updateAuthUI();
   if(authUser()){
     const resolved=resolveUsername();
+    /* Remember this account so next time the gate opens straight into "Sign in". */
+    try{ const u=authUser(); if(u&&u.email)localStorage.setItem("im703_last_email",u.email); if(resolved)localStorage.setItem("im703_last_name",resolved); }catch(_){}
     const row=await cloudPull();
     if(row&&row.data){ S=Object.assign(defaultState(),row.data); }
     if(resolved && !((S.username||"").trim())) S.username=resolved;
