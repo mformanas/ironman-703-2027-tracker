@@ -267,10 +267,13 @@
     <h1 id="gate_title" style="margin:12px 0 4px;font-size:24px;color:#28304a">Road to 70.3</h1>
     <p id="gate_intro" style="margin:0 0 20px;color:#8089a3;font-size:14px;line-height:1.5">Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.</p>
     <div id="gate_step1">
+      <div id="gate_tabs" style="display:flex;gap:4px;background:#eef0f7;border-radius:11px;padding:4px;margin-bottom:16px">
+        <button id="gate_tab_signin" type="button" style="flex:1;border:none;border-radius:8px;padding:9px 0;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:#5a6480">Sign in</button>
+        <button id="gate_tab_signup" type="button" style="flex:1;border:none;border-radius:8px;padding:9px 0;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:#5a6480">Sign up</button>
+      </div>
       <div id="gate_namewrap"><input id="gate_name" type="text" autocomplete="nickname" maxlength="24" placeholder="Your name (shown on the leaderboard)" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none"></div>
       <input id="gate_email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none">
       <button id="gate_send" class="btn primary" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;font-size:15px;padding:12px">Email me a sign-in link</button>
-      <button id="gate_toggle" style="margin-top:12px;background:none;border:none;color:#6a5cff;font-size:13px;cursor:pointer;text-decoration:underline">New here? Create an account</button>
     </div>
     <div id="gate_step2" style="display:none">
       <div style="font-size:30px;line-height:1;margin-bottom:6px">&#128231;</div>
@@ -591,37 +594,43 @@ function gateMsg(t,err){ const g=document.getElementById("gatemsg"); if(g){ g.st
 function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 /* Gate has two modes: "signin" (returning \u2013 email remembered, no name asked)
    and "signup" (first time \u2013 ask for a name). It opens in whichever fits. */
-let _gateMode="signup";
+let _gateMode="signin";
 function rememberedEmail(){ try{ return localStorage.getItem("im703_last_email")||""; }catch(_){ return ""; } }
 function setGateMode(mode,email){
-  _gateMode=mode;
+  _gateMode=(mode==="signup")?"signup":"signin";
   const title=document.getElementById("gate_title"), intro=document.getElementById("gate_intro"),
         nameWrap=document.getElementById("gate_namewrap"), emailEl=document.getElementById("gate_email"),
-        sendBtn=document.getElementById("gate_send"), toggle=document.getElementById("gate_toggle");
-  if(mode==="signin"){
+        sendBtn=document.getElementById("gate_send"),
+        tIn=document.getElementById("gate_tab_signin"), tUp=document.getElementById("gate_tab_signup");
+  // tab styling
+  const active="background:#fff;color:#28304a;box-shadow:0 1px 2px rgba(0,0,0,.08)", idle="background:transparent;color:#5a6480";
+  const baseTab="flex:1;border:none;border-radius:8px;padding:9px 0;font-size:14px;font-weight:600;cursor:pointer;";
+  if(tIn)tIn.style.cssText=baseTab+(_gateMode==="signin"?active:idle);
+  if(tUp)tUp.style.cssText=baseTab+(_gateMode==="signup"?active:idle);
+  if(_gateMode==="signin"){
     if(title)title.textContent="Welcome back";
     if(intro)intro.innerHTML="Sign in with your email &mdash; we'll send a one-time link to confirm it's you. No password needed.";
     if(nameWrap)nameWrap.style.display="none";
-    if(emailEl)emailEl.value=email||rememberedEmail();
+    if(emailEl)emailEl.value=(email!==undefined?email:rememberedEmail());
     if(sendBtn)sendBtn.textContent="Email me a sign-in link";
-    if(toggle)toggle.textContent="Use a different account";
   } else {
-    if(title)title.textContent="Road to 70.3";
-    if(intro)intro.innerHTML="Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.";
+    if(title)title.textContent="Create your account";
+    if(intro)intro.innerHTML="Enter your name and email and we'll send you a one-time link to finish &mdash; no password needed. Your progress saves to your account and syncs across all your devices.";
     if(nameWrap)nameWrap.style.display="";
-    if(emailEl&&!email)emailEl.value="";
-    if(sendBtn)sendBtn.textContent="Email me a sign-in link";
-    if(toggle)toggle.textContent=rememberedEmail()?"Already have an account? Sign in":"";
+    if(emailEl&&email!==undefined)emailEl.value=email;
+    if(sendBtn)sendBtn.textContent="Email me a sign-up link";
   }
   gateMsg("");
 }
 function initGate(){
   const last=rememberedEmail();
-  setGateMode(last?"signin":"signup", last);
+  // Returning device opens straight into Sign in (email prefilled); otherwise still
+  // default to Sign in so existing users on a fresh/incognito tab can get in by email.
+  setGateMode("signin", last);
 }
-function toggleGateMode(){
-  setGateMode(_gateMode==="signin"?"signup":"signin", _gateMode==="signin"?"":rememberedEmail());
-  const f=document.getElementById(_gateMode==="signup"?"gate_name":"gate_email"); if(f)f.focus();
+function toggleGateMode(mode){
+  setGateMode(mode, mode==="signin"?rememberedEmail():"");
+  const f=document.getElementById(mode==="signup"?"gate_name":"gate_email"); if(f)f.focus();
 }
 async function sendEmailLink(email){
   if(!sbClient){ gateMsg("Login isn't configured yet."); return; }
@@ -631,20 +640,29 @@ async function sendEmailLink(email){
   if(_gateMode==="signup" && !name){ gateMsg("Please enter your name."); if(nameEl)nameEl.focus(); return; }
   if(!validEmail(email)){ gateMsg("Please enter a valid email address."); return; }
   if(_gateMode==="signin" && !name){ try{ name=localStorage.getItem("im703_last_name")||""; }catch(_){} }
+  const isSignup=(_gateMode==="signup");
   try{ if(name)localStorage.setItem("im703_pending_name",name); localStorage.setItem("im703_last_email",email); if(name)localStorage.setItem("im703_last_name",name); }catch(_){}
   const btn=document.getElementById("gate_send"); if(btn){ btn.disabled=true; btn.textContent="Sending…"; }
   try{
-    const opts={emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true};
+    const opts={emailRedirectTo:location.origin+location.pathname,shouldCreateUser:isSignup};
     if(name)opts.data={username:name};
     const {error}=await sbClient.auth.signInWithOtp({email,options:opts});
-    if(error) throw error;
+    if(error){
+      // Signing in with an email that has no account yet
+      if(!isSignup && /not.*(found|exist)|signups? not allowed|otp_disabled|user_not_found/i.test(error.message||"")){
+        gateMsg("No account found for that email. Tap \u201cSign up\u201d to create one.");
+        const btn2=document.getElementById("gate_send"); if(btn2){ btn2.disabled=false; btn2.textContent="Email me a sign-in link"; }
+        return;
+      }
+      throw error;
+    }
     _pendingEmail=email;
     const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2"), st=document.getElementById("gate_sentto");
     if(st)st.textContent=email;
     if(s1)s1.style.display="none"; if(s2)s2.style.display="";
     gateMsg("");
   }catch(e){ gateMsg((e&&e.message)||"Couldn't send the email. Try again."); showCloudErr(e); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent="Email me a sign-in link"; } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent=isSignup?"Email me a sign-up link":"Email me a sign-in link"; } }
 }
 function gateBackToEmail(){
   const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2");
@@ -1313,7 +1331,8 @@ const _gsend=$("#gate_send"); if(_gsend)_gsend.addEventListener("click",()=>send
 const _gemail=$("#gate_email"); if(_gemail)_gemail.addEventListener("keydown",e=>{if(e.key==="Enter")sendEmailLink(_gemail.value);});
 const _gresend=$("#gate_resend"); if(_gresend)_gresend.addEventListener("click",()=>sendEmailLink(_pendingEmail||($("#gate_email")||{}).value));
 const _gback=$("#gate_back"); if(_gback)_gback.addEventListener("click",gateBackToEmail);
-const _gtoggle=$("#gate_toggle"); if(_gtoggle)_gtoggle.addEventListener("click",toggleGateMode);
+const _gtin=$("#gate_tab_signin"); if(_gtin)_gtin.addEventListener("click",()=>toggleGateMode("signin"));
+const _gtup=$("#gate_tab_signup"); if(_gtup)_gtup.addEventListener("click",()=>toggleGateMode("signup"));
 const _belink=$("#btn_emaillink"); if(_belink)_belink.addEventListener("click",async()=>{
   const ei=$("#acct_email_in"), email=ei?ei.value.trim():"";
   if(!validEmail(email)){$("#sbmsg").textContent="Enter a valid email above.";return;}
