@@ -417,6 +417,11 @@ const SUPABASE_KEY = "sb_publishable_VQeGOjkkLlkE0_DuZfMapQ_flzpFzuT";  /* publi
 function sbUrl(){return (localStorage.getItem("im703_sb_url")||SUPABASE_URL||"").trim().replace(/\/+$/,"");}
 function sbKey(){return (localStorage.getItem("im703_sb_key")||SUPABASE_KEY||"").trim();}
 function cloudOn(){return !!(sbUrl()&&sbKey());}
+/* Build auth headers. Legacy "anon" keys are JWTs (eyJ...) and PostgREST wants
+   them in Authorization: Bearer. New publishable keys (sb_publishable_...) are
+   NOT JWTs \u2013 sending them as Bearer makes PostgREST reject them, so for those
+   we send only the apikey header and let the gateway resolve the anon role. */
+function sbHeaders(extra){const k=sbKey();const h=Object.assign({apikey:k},extra||{});if(/^eyJ/.test(k))h.Authorization="Bearer "+k;return h;}
 /* Each visitor gets a private random sync code = their row id in the shared
    table. It lives in their browser; they can copy it to use on other devices
    or paste an existing one to pull their data down. No login/passwords. */
@@ -433,15 +438,17 @@ function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.ge
   const box=document.getElementById("syncidbox"); if(box)box.style.display=cloudOn()?"":"none";
   const c=document.getElementById("sb_code"); if(c&&!c.value)c.value=uid();
 }
+let _lastCloudErr="";
+function showCloudErr(e){ _lastCloudErr=(e&&e.message)?e.message:String(e); try{console.warn("[cloud]",_lastCloudErr);}catch(_){}; const m=document.getElementById("sbmsg"); if(m)m.textContent="Cloud error: "+_lastCloudErr; }
 async function cloudPull(){
   if(!cloudOn())return null;
   try{ setSync("Syncing\u2026");
     const r=await fetch(sbUrl()+"/rest/v1/tracker?id=eq."+encodeURIComponent(uid())+"&select=data,updated_at",
-      {headers:{apikey:sbKey(),Authorization:"Bearer "+sbKey()}});
-    if(!r.ok)throw new Error("HTTP "+r.status);
+      {headers:sbHeaders()});
+    if(!r.ok){const t=await r.text().catch(()=>"" ); throw new Error("HTTP "+r.status+(t?" \u2013 "+t.slice(0,200):""));}
     const rows=await r.json(); setSync("Synced \u2713");
     return (rows&&rows[0])?rows[0]:null;
-  }catch(e){ setSync("Offline \u2013 local only"); return null; }
+  }catch(e){ setSync("Offline \u2013 local only"); showCloudErr(e); return null; }
 }
 async function cloudPush(){
   if(!cloudOn())return;
@@ -449,11 +456,11 @@ async function cloudPush(){
     const body=[{id:uid(),data:S,updated_at:new Date().toISOString()}];
     const r=await fetch(sbUrl()+"/rest/v1/tracker",
       {method:"POST",
-       headers:{apikey:sbKey(),Authorization:"Bearer "+sbKey(),"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},
+       headers:sbHeaders({"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"}),
        body:JSON.stringify(body)});
-    if(!r.ok)throw new Error("HTTP "+r.status);
-    setSync("Synced \u2713");
-  }catch(e){ setSync("Offline \u2013 saved on device"); }
+    if(!r.ok){const t=await r.text().catch(()=>"" ); throw new Error("HTTP "+r.status+(t?" \u2013 "+t.slice(0,200):""));}
+    setSync("Synced \u2713"); const m=document.getElementById("sbmsg"); if(m&&/^Cloud error/.test(m.textContent))m.textContent="Synced \u2713";
+  }catch(e){ setSync("Offline \u2013 saved on device"); showCloudErr(e); }
 }
 function queueCloud(){ if(!cloudOn())return; clearTimeout(_syncTimer); _syncTimer=setTimeout(cloudPush,800); }
 
