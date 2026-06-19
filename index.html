@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Road to 70.3 — Training Tracker</title>
+<!-- PWA / installable app -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6a5cff">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<!-- iOS Add-to-Home-Screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="70.3 Tracker">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +31,8 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:"Fredoka",ui-rounded,"Segoe UI Rounded","SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fdf4ff,#eef4ff 55%,#fff3ea);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
   a{color:var(--purple)}
-  header{background:linear-gradient(120deg,#6a5cff 0%,#ff5d8f 55%,#ff9d3d 100%);color:#fff;padding:20px 22px 24px;border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+  header{background:linear-gradient(120deg,#6a5cff 0%,#ff5d8f 55%,#ff9d3d 100%);color:#fff;padding:calc(20px + env(safe-area-inset-top)) calc(22px + env(safe-area-inset-right)) 24px calc(22px + env(safe-area-inset-left));border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+  body{padding-bottom:env(safe-area-inset-bottom)}
   header::after{content:"";position:absolute;right:-34px;top:-34px;width:170px;height:170px;background:rgba(255,255,255,.14);border-radius:50%}
   header::before{content:"";position:absolute;left:-26px;bottom:-46px;width:130px;height:130px;background:rgba(255,255,255,.10);border-radius:50%}
   .wrap{max-width:1080px;margin:0 auto;position:relative;z-index:1}
@@ -278,8 +289,11 @@
     <div id="gate_step2" style="display:none">
       <div style="font-size:30px;line-height:1;margin-bottom:6px">&#128231;</div>
       <p style="margin:0 0 6px;color:#28304a;font-size:15px;font-weight:600">Check your inbox</p>
-      <p style="margin:0 0 14px;color:#8089a3;font-size:13px;line-height:1.5">We sent a sign-in link to <strong id="gate_sentto" style="color:#28304a">your email</strong>. Open it on this device and tap the link to finish signing in. It may take a minute &mdash; check spam too.</p>
-      <button id="gate_resend" class="btn" style="width:100%;justify-content:center;display:flex;font-size:14px;padding:10px">Resend link</button>
+      <p style="margin:0 0 14px;color:#8089a3;font-size:13px;line-height:1.5">We emailed a 6-digit code &amp; a sign-in link to <strong id="gate_sentto" style="color:#28304a">your email</strong>. Enter the code below to finish &mdash; it may take a minute, check spam too.</p>
+      <input id="gate_code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:20px;letter-spacing:6px;text-align:center;margin-bottom:10px;outline:none">
+      <button id="gate_verify" class="btn primary" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;font-size:15px;padding:12px">Verify &amp; sign in</button>
+      <p style="margin:12px 0 8px;color:#aab2c5;font-size:12px">or tap the link in the email instead</p>
+      <button id="gate_resend" class="btn" style="width:100%;justify-content:center;display:flex;font-size:14px;padding:10px">Resend email</button>
       <button id="gate_back" style="margin-top:10px;background:none;border:none;color:#8089a3;font-size:12.5px;cursor:pointer;text-decoration:underline">Use a different email</button>
     </div>
     <p id="gatemsg" style="margin:14px 0 0;color:#b00020;font-size:12px;min-height:14px"></p>
@@ -668,8 +682,28 @@ function gateBackToEmail(){
   const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2");
   if(s1)s1.style.display=""; if(s2)s2.style.display="none";
   _pendingEmail=""; gateMsg("");
+  const ci=document.getElementById("gate_code"); if(ci)ci.value="";
   if(typeof initGate==="function") initGate();
   const ei=document.getElementById("gate_email"); if(ei)ei.focus();
+}
+async function verifyCode(code){
+  if(!sbClient){ gateMsg("Login isn't configured yet."); return; }
+  code=(code||"").replace(/\D/g,"").trim();
+  const email=(_pendingEmail||"").trim();
+  if(!email){ gateMsg("Enter your email again."); gateBackToEmail(); return; }
+  if(code.length<6){ gateMsg("Enter the 6-digit code from the email."); return; }
+  const btn=document.getElementById("gate_verify"); if(btn){ btn.disabled=true; btn.textContent="Verifying…"; }
+  try{
+    const {error}=await sbClient.auth.verifyOtp({email,token:code,type:"email"});
+    if(error){
+      if(/expired|invalid|token/i.test(error.message||"")){
+        gateMsg("That code is wrong or expired. Check the latest email or tap Resend.");
+      } else { throw error; }
+      return;
+    }
+    gateMsg(""); /* SIGNED_IN fires -> afterAuth() hides the gate */
+  }catch(e){ gateMsg((e&&e.message)||"Couldn't verify the code. Try again."); showCloudErr(e); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="Verify & sign in"; } }
 }
 async function signOutUser(){
   try{ if(sbClient) await sbClient.auth.signOut(); }catch(e){}
@@ -1330,6 +1364,8 @@ $("#reset").addEventListener("click",()=>armConfirm($("#reset"),()=>{
 const _gsend=$("#gate_send"); if(_gsend)_gsend.addEventListener("click",()=>sendEmailLink(($("#gate_email")||{}).value));
 const _gemail=$("#gate_email"); if(_gemail)_gemail.addEventListener("keydown",e=>{if(e.key==="Enter")sendEmailLink(_gemail.value);});
 const _gresend=$("#gate_resend"); if(_gresend)_gresend.addEventListener("click",()=>sendEmailLink(_pendingEmail||($("#gate_email")||{}).value));
+const _gverify=$("#gate_verify"); if(_gverify)_gverify.addEventListener("click",()=>verifyCode(($("#gate_code")||{}).value));
+const _gcode=$("#gate_code"); if(_gcode){ _gcode.addEventListener("keydown",e=>{if(e.key==="Enter")verifyCode(_gcode.value);}); _gcode.addEventListener("input",()=>{ _gcode.value=_gcode.value.replace(/\D/g,"").slice(0,6); if(_gcode.value.length===6)verifyCode(_gcode.value); }); }
 const _gback=$("#gate_back"); if(_gback)_gback.addEventListener("click",gateBackToEmail);
 const _gtin=$("#gate_tab_signin"); if(_gtin)_gtin.addEventListener("click",()=>toggleGateMode("signin"));
 const _gtup=$("#gate_tab_signup"); if(_gtup)_gtup.addEventListener("click",()=>toggleGateMode("signup"));
@@ -1398,6 +1434,13 @@ async function boot(){
   }
 }
 boot();
+
+/* ---- PWA service worker (offline support for the installed app) ---- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
