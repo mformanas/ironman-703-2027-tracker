@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Road to 70.3 — Training Tracker</title>
+<!-- PWA / installable app -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6a5cff">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<!-- iOS Add-to-Home-Screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="70.3 Tracker">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Supabase JS client (used for Google login + per-account cloud sync) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    /* playful palette (navy/blue/accent kept as aliases for legacy inline refs) */
+    --navy:#6a5cff; --blue:#22b8ff; --accent:#ff5d8f; --ink:#28304a; --muted:#8089a3;
+    --bg:#fdf4ff; --card:#ffffff; --line:#ece1f7;
+    --swim:#22b8ff; --bike:#2fd07a; --run:#ff8a3d; --strength:#9b6bff; --brick:#16c0ac; --rest:#aab4c8;
+    --sun:#ffce4a; --pink:#ff5d8f; --purple:#6a5cff; --good:#1fb96b;
+    --shadow:0 8px 22px rgba(106,92,255,.10),0 2px 6px rgba(40,48,74,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Fredoka",ui-rounded,"Segoe UI Rounded","SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fdf4ff,#eef4ff 55%,#fff3ea);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+  a{color:var(--purple)}
+  header{background:linear-gradient(120deg,#6a5cff 0%,#ff5d8f 55%,#ff9d3d 100%);color:#fff;padding:calc(20px + env(safe-area-inset-top)) calc(22px + env(safe-area-inset-right)) 24px calc(22px + env(safe-area-inset-left));border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  header::after{content:"";position:absolute;right:-34px;top:-34px;width:170px;height:170px;background:rgba(255,255,255,.14);border-radius:50%}
+  header::before{content:"";position:absolute;left:-26px;bottom:-46px;width:130px;height:130px;background:rgba(255,255,255,.10);border-radius:50%}
+  .wrap{max-width:1080px;margin:0 auto;position:relative;z-index:1}
+  .htop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px}
+  .brand{font-weight:700;font-size:23px;letter-spacing:.2px;text-shadow:0 2px 0 rgba(0,0,0,.08)}
+  .brand small{display:block;font-weight:500;font-size:12px;opacity:.92;letter-spacing:0}
+  .countdown{text-align:right;background:rgba(255,255,255,.18);padding:8px 15px;border-radius:18px}
+  .countdown .num{font-size:30px;font-weight:700;line-height:1}
+  .countdown .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;opacity:.95}
+  .progwrap{margin-top:16px}
+  .progbar{height:12px;background:rgba(255,255,255,.28);border-radius:99px;overflow:hidden}
+  .progfill{height:100%;background:linear-gradient(90deg,#ffe14a,#2fd07a);width:0%;transition:width .5s;border-radius:99px}
+  .progmeta{display:flex;justify-content:space-between;font-size:12px;opacity:.97;margin-top:6px;font-weight:500}
+  nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;gap:6px;overflow-x:auto;padding:9px 4px}
+  .tab{padding:9px 16px;border:0;background:none;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:99px;white-space:nowrap;transition:.15s}
+  .tab:hover{background:#f3ecff;color:var(--purple)}
+  .tab.active{color:#fff;background:linear-gradient(120deg,#6a5cff,#ff5d8f);box-shadow:0 4px 10px rgba(106,92,255,.3)}
+  main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
+  .view{display:none}
+  .view.active{display:block;animation:fadein .3s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{border:2px solid var(--line);background:#fff;border-radius:99px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink);transition:.15s}
+  .btn:hover{transform:translateY(-1px);border-color:#d9c9f5}
+  .btn.primary{background:linear-gradient(120deg,#6a5cff,#ff5d8f);color:#fff;border-color:transparent}
+  .btn.small{padding:5px 12px;font-size:12px}
+  .btn.danger{color:#e0436b;border-color:#ffd2de}
+  .btn.confirming{background:#e0436b;color:#fff;border-color:#e0436b;animation:pulseC 1s ease-in-out infinite}
+  @keyframes pulseC{0%,100%{box-shadow:0 0 0 0 rgba(224,67,107,.45)}50%{box-shadow:0 0 0 5px rgba(224,67,107,0)}}
+  /* Plan */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  .pill{font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;color:#fff;display:inline-block;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  select,input,textarea{font-family:inherit;font-size:14px;border:2px solid var(--line);border-radius:12px;padding:8px 11px;background:#fff;color:var(--ink)}
+  select:focus,input:focus,textarea:focus{outline:none;border-color:var(--purple)}
+  .phasehead{margin:26px 0 12px;font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--purple);display:flex;align-items:center;gap:10px}
+  .phasehead .ln{flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,#e7dcff,transparent)}
+  .week{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:0;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden;transition:.2s}
+  .week:hover{border-color:#e2d4fb}
+  .week.current{border-color:var(--sun);box-shadow:0 0 0 3px #ffe9a8,var(--shadow)}
+  .whead{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none}
+  .whead:hover{background:#faf7ff}
+  .wnum{font-weight:700;font-size:15px;min-width:56px}
+  .wnum small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+  .wmeta{flex:1;min-width:0}
+  .wfocus{font-size:14px;color:var(--ink);font-weight:500}
+  .wsub{font-size:12px;color:var(--muted);margin-top:2px}
+  .wtarget{font-size:13px;color:var(--ink);line-height:1.6}
+  .wtarget b{font-weight:700}
+  .wtdim{color:#9aa3b2}
+  .whours{font-weight:700;font-size:15px;text-align:right;min-width:64px}
+  .whours small{display:block;font-weight:500;font-size:10px;color:var(--muted)}
+  .wprog{width:42px;height:42px;flex:none}
+  .chev{transition:transform .2s;color:var(--muted);flex:none}
+  .week.open .chev{transform:rotate(90deg)}
+  .wbody{display:none;padding:6px 16px 16px;border-top:2px dashed var(--line)}
+  .week.open .wbody{display:block}
+  .badgeflag{font-size:11px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:.5px}
+  .dot{width:10px;height:10px;border-radius:4px;flex:none}
+  input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:var(--purple)}
+  .keyrow{font-size:12.5px;color:var(--muted);margin:6px 2px 12px;background:#faf7ff;border:1px solid var(--line);border-radius:14px;padding:9px 13px;line-height:1.8}
+  .keyrow b{color:var(--ink)}
+  /* Day blocks */
+  .day{padding:10px 0 2px}
+  .dayhdr{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 8px}
+  .dayname{font-size:12.5px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px}
+  .dayswap{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px}
+  .dayswap select{font-size:11.5px;padding:3px 8px;border-radius:9px;cursor:pointer}
+  .dayitems{display:flex;flex-direction:column;gap:10px}
+  /* Scene tiles */
+  .tile{display:flex;align-items:center;gap:12px;padding:8px;border:2px solid var(--line);border-radius:16px;background:#fff;cursor:default;position:relative;overflow:hidden;transition:.18s}
+  .tile:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .tile.rest{background:#f7f9fc}
+  .tilescene{width:98px;height:64px;flex:none;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
+  .tiletext{flex:1;min-width:0}
+  .tilelabel{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3}
+  .tilesport{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .tilecheck{order:3;width:26px;height:26px;flex:none;margin:0 8px 0 2px;accent-color:var(--good);cursor:default}
+  .tilecheck:disabled{opacity:1}
+  .removeitem{order:4;flex:none;width:24px;height:24px;border:0;border-radius:50%;background:#fbe9ee;color:#d63a66;font-size:18px;line-height:1;font-weight:700;cursor:pointer;margin-left:2px;padding:0;transition:.15s}
+  .removeitem:hover{background:#f6c9d6}
+  .additem{margin-top:8px;border:1.5px dashed var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12px;border-radius:12px;padding:7px 12px;cursor:pointer;width:100%;transition:.15s}
+  .additem:hover{border-color:#d9c9f5;color:var(--purple);background:#faf7ff}
+  .typesel{order:1;flex:none;font-size:11px;font-weight:600;color:var(--muted);border:1.5px solid var(--line);border-radius:9px;padding:4px 6px;margin-right:4px;background:#fff;cursor:pointer;max-width:104px}
+  .typesel option.orig{text-decoration:underline;font-style:italic}
+  .typesel:hover{border-color:#d9c9f5}
+  .logbtn{order:2;flex:none;font-size:11.5px;font-weight:700;color:var(--purple);background:#f3ecff;border:0;border-radius:99px;padding:6px 12px;margin-right:4px;cursor:pointer;white-space:nowrap;transition:.15s}
+  .logbtn:hover{background:#e7dcff;transform:translateY(-1px)}
+  .logbtn.edit,.tile.done .logbtn{background:#e9f7ef;color:#1fb96b}
+  .logbtn.edit:hover,.tile.done .logbtn:hover{background:#d7f0e1}
+  .restbadge{order:2;font-size:11px;font-weight:700;color:var(--muted);background:#eef1f7;padding:4px 11px;border-radius:99px;margin-right:6px;white-space:nowrap}
+  .tile.done{border-color:#bff0d6;background:#f3fcf7}
+  .tile.done .tilescene{filter:saturate(.55) brightness(1.03)}
+  .tile.done .tilelabel{color:var(--muted)}
+  .sport-swim .tilesport{color:var(--swim)} .sport-bike .tilesport{color:var(--bike)} .sport-run .tilesport{color:var(--run)}
+  .sport-strength .tilesport{color:var(--strength)} .sport-brick .tilesport{color:var(--brick)} .sport-rest .tilesport{color:var(--rest)}
+  /* Animated scenes */
+  .scene{width:100%;height:100%;display:block}
+  .scene *{transform-box:fill-box}
+  @keyframes waveX{from{transform:translateX(0)}to{transform:translateX(-25px)}}
+  @keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+  @keyframes stroke{0%{transform:rotate(-45deg)}50%{transform:rotate(60deg)}100%{transform:rotate(-45deg)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes dashmove{to{stroke-dashoffset:-30}}
+  @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+  @keyframes legf{0%,100%{transform:rotate(30deg)}50%{transform:rotate(-30deg)}}
+  @keyframes legb{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(30deg)}}
+  @keyframes liftY{0%,100%{transform:translateY(5px)}50%{transform:translateY(-5px)}}
+  @keyframes zfloat{0%{transform:translateY(2px) scale(.8);opacity:0}25%{opacity:1}100%{transform:translateY(-15px) scale(1.1);opacity:0}}
+  @keyframes sunsp{to{transform:rotate(360deg)}}
+  .scene .wave{animation:waveX 2.4s linear infinite}
+  .scene .wave.f{animation-duration:1.6s}
+  .scene .swimmer{animation:bobY 1.5s ease-in-out infinite;transform-origin:center}
+  .scene .arm{animation:stroke 1s linear infinite;transform-origin:left center}
+  .scene .wheel{animation:spin .55s linear infinite;transform-origin:center}
+  .scene .lane{stroke-dasharray:8 7;animation:dashmove .45s linear infinite}
+  .scene .scn{animation:scrollX 1.3s linear infinite}
+  .scene .scn.s{animation-duration:2.2s}
+  .scene .legf{animation:legf .46s linear infinite;transform-origin:top center}
+  .scene .legb{animation:legb .46s linear infinite;transform-origin:top center}
+  .scene .runner,.scene .biker{animation:bobY .5s ease-in-out infinite;transform-origin:center}
+  .scene .bar{animation:liftY 1.5s ease-in-out infinite;transform-origin:center}
+  .scene .zz{animation:zfloat 2.6s ease-in-out infinite}
+  .scene .zz2{animation:zfloat 2.6s ease-in-out infinite;animation-delay:1.3s}
+  .scene .sunb{animation:sunsp 9s linear infinite;transform-origin:center}
+  @media(prefers-reduced-motion:reduce){.scene *{animation:none!important}}
+  /* Log + cards */
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+  .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:12px;font-weight:700;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .logsport{font-weight:700}
+  .logactions{white-space:nowrap}
+  .logactions .btn{margin-right:6px}
+  .empty{color:var(--muted);font-size:14px;padding:22px 4px;text-align:center}
+  /* stats + charts */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+  .stat{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;right:-14px;top:-14px;width:56px;height:56px;border-radius:50%;background:linear-gradient(120deg,rgba(106,92,255,.13),rgba(255,93,143,.13))}
+  .stat .v{font-size:28px;font-weight:700;color:var(--purple)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin:6px 2px 12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .chartbox{overflow-x:auto}
+  svg{display:block}
+  .tests td input{width:100%}
+  .tests th:first-child,.tests td:first-child{font-weight:600}
+  .note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.65}
+  .savetag{font-size:12px;color:var(--good);font-weight:700;opacity:0;transition:opacity .3s}
+  .savetag.show{opacity:1}
+  strong{color:var(--ink)}
+  /* Home illustrated KPI cards */
+  .homewrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-top:4px}
+  .hcard{background:var(--card);border:2px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow);transition:.18s}
+  .hcard:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(106,92,255,.18)}
+  .hscene{height:128px;width:100%;overflow:hidden;border-bottom:2px solid var(--line)}
+  .hscene .scene{width:100%;height:100%}
+  .hbody{padding:13px 15px 15px}
+  .htitle{font-size:21px;font-weight:800;margin-bottom:11px;letter-spacing:.2px}
+  .sport-swim .htitle{color:#1f95da}.sport-bike .htitle{color:#23b56a}.sport-run .htitle{color:#ef7c1f}.sport-strength .htitle{color:#7d4fe6}
+  .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .kgrid.k3{grid-template-columns:repeat(3,1fr)}
+  .envsplit{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center}
+  .envsplit strong{color:var(--ink)}
+  .kpi{background:#f7f7fd;border-radius:14px;padding:11px 6px;text-align:center}
+  .kpi .kv{font-size:18px;font-weight:800;color:var(--ink);line-height:1.05;white-space:nowrap}
+  .kpi .kv small{font-size:11px;font-weight:700;color:var(--muted);margin-left:1px}
+  .kpi .kl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:4px}
+  /* dashboard period selector */
+  .periodbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:var(--shadow)}
+  .periodbar .plabel{font-size:13px;font-weight:700;color:var(--muted)}
+  .periodbar select{font-size:13px;padding:7px 10px}
+  .periodbar #d_range{margin-left:auto}
+  /* planned-distance progress bar */
+  .distbar{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .distbar-top{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:5px}
+  .distbar-track{height:12px;background:#eef0f7;border-radius:99px;overflow:hidden}
+  .distbar-fill{height:100%;width:0;border-radius:99px;transition:width .5s ease;background:var(--purple)}
+  .sport-swim .distbar-fill{background:linear-gradient(90deg,#3fc0ff,#1f95da)}
+  .sport-bike .distbar-fill{background:linear-gradient(90deg,#4ce08a,#23b56a)}
+  .sport-run .distbar-fill{background:linear-gradient(90deg,#ffb14a,#ef7c1f)}
+  .distbar-foot{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .distbar-foot .est{font-style:italic}
+  /* Dashboard "more stats" expander */
+  .morebtn{margin-top:12px;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--purple);font-weight:700;font-size:12px;cursor:pointer;padding:9px 6px 2px;display:flex;align-items:center;justify-content:center;gap:5px}
+  .morebtn .mchev{display:inline-block;transition:transform .2s}
+  .morebtn.open .mchev{transform:rotate(180deg)}
+  .morestats{display:none;margin-top:8px}
+  .morestats.open{display:block}
+  .mssec{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:4px 2px 7px}
+  .mschips{display:flex;gap:8px;margin-bottom:12px}
+  .mschip{flex:1;background:#faf7ff;border:1px solid var(--line);border-radius:12px;padding:9px 4px;text-align:center}
+  .mcv{font-size:17px;font-weight:800;color:var(--ink)}
+  .mcv small{font-size:10px;font-weight:600;color:var(--muted)}
+  .mcl{font-size:10.5px;color:var(--muted);margin-top:3px}
+  .mstable{display:flex;flex-direction:column}
+  .msr{display:flex;align-items:center;font-size:12.5px;padding:6px 8px;border-radius:8px}
+  .msr:nth-child(odd){background:#faf7ff}
+  .mshdr{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:none!important;padding-bottom:2px}
+  .msl{flex:1;color:var(--muted);font-weight:600}
+  .msd,.mst{width:88px;text-align:right;font-weight:700;color:var(--ink)}
+  .msempty{font-size:12px;color:var(--muted);text-align:center;padding:6px 0 2px}
+  /* Settings gear + modal */
+  #gear{margin-left:auto;flex:none;background:#f3ecff;border:0;color:var(--purple);font-size:18px;width:38px;height:38px;border-radius:50%;cursor:pointer;line-height:1;transition:.2s}
+  #gear:hover{background:#e7dcff;transform:rotate(40deg)}
+  .modal{display:none;position:fixed;inset:0;background:rgba(30,24,60,.5);z-index:60;padding:22px;overflow-y:auto}
+  .modal.open{display:flex;align-items:flex-start;justify-content:center}
+  .modalcard{background:#f5f6fc;border-radius:24px;max-width:640px;width:100%;padding:20px;margin:auto;box-shadow:0 24px 60px rgba(0,0,0,.32)}
+  .modalhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .modalhead strong{font-size:18px}
+  .modalx{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;color:var(--muted);padding:0 4px}
+  .modalx:hover{color:var(--ink)}
+  @media(max-width:560px){.whours{min-width:52px}.wnum{min-width:46px}.tilescene{width:80px;height:58px}.brand{font-size:20px}.kpi .kv{font-size:16px}}
+  .lbsport{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04);overflow:hidden}
+  .lbsport-h{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;margin-bottom:12px}
+  .lbsport-i{font-size:22px}
+  .lbkpis{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.lbkpis{grid-template-columns:1fr}}
+  .lbkpi{min-width:0}
+  .lbkpi-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
+  .lblist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .lbrow{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;font-size:14px;min-width:0}
+  .lbrow.lb-me{background:rgba(14,165,183,.10)}
+  .lbrank{width:20px;text-align:center;flex:none;font-size:14px}
+  .lbname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lbname em{color:var(--muted);font-style:normal;font-size:12px}
+  .lbval{font-variant-numeric:tabular-nums;font-weight:600;flex:0 0 auto;white-space:nowrap;font-size:13px}
+  .lbempty{font-size:13px;color:var(--muted);padding:6px 8px}
+</style>
+</head>
+<body>
+<!-- LOGIN GATE -->
+<div id="authgate" style="display:none;position:fixed;inset:0;z-index:10000;background:linear-gradient(160deg,#6a5cff,#22b8ff);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;max-width:380px;width:100%;padding:30px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+    <div style="font-size:34px;line-height:1;display:flex;justify-content:center;gap:8px">
+      <span style="display:inline-block;transform:scaleX(-1)">&#127946;</span>
+      <span style="display:inline-block;transform:scaleX(-1)">&#128692;</span>
+      <span style="display:inline-block;transform:scaleX(-1)">&#127939;</span>
+    </div>
+    <h1 id="gate_title" style="margin:12px 0 4px;font-size:24px;color:#28304a">Road to 70.3</h1>
+    <p id="gate_intro" style="margin:0 0 20px;color:#8089a3;font-size:14px;line-height:1.5">Enter your name and email and we'll send you a one-time sign-in link &mdash; no password needed. Your training progress saves to your account and syncs across all your devices.</p>
+    <div id="gate_step1">
+      <div id="gate_tabs" style="display:flex;gap:4px;background:#eef0f7;border-radius:11px;padding:4px;margin-bottom:16px">
+        <button id="gate_tab_signin" type="button" style="flex:1;border:none;border-radius:8px;padding:9px 0;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:#5a6480">Sign in</button>
+        <button id="gate_tab_signup" type="button" style="flex:1;border:none;border-radius:8px;padding:9px 0;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:#5a6480">Sign up</button>
+      </div>
+      <div id="gate_namewrap"><input id="gate_name" type="text" autocomplete="nickname" maxlength="24" placeholder="Your name (shown on the leaderboard)" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none"></div>
+      <input id="gate_email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:15px;margin-bottom:10px;outline:none">
+      <button id="gate_send" class="btn primary" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;font-size:15px;padding:12px">Email me a sign-in link</button>
+    </div>
+    <div id="gate_step2" style="display:none">
+      <div style="font-size:30px;line-height:1;margin-bottom:6px">&#128231;</div>
+      <p style="margin:0 0 6px;color:#28304a;font-size:15px;font-weight:600">Check your inbox</p>
+      <p style="margin:0 0 14px;color:#8089a3;font-size:13px;line-height:1.5">We emailed a 6-digit code &amp; a sign-in link to <strong id="gate_sentto" style="color:#28304a">your email</strong>. Enter the code below to finish &mdash; it may take a minute, check spam too.</p>
+      <input id="gate_code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d6dbe8;border-radius:10px;font-size:20px;letter-spacing:6px;text-align:center;margin-bottom:10px;outline:none">
+      <button id="gate_verify" class="btn primary" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;font-size:15px;padding:12px">Verify &amp; sign in</button>
+      <p style="margin:12px 0 8px;color:#aab2c5;font-size:12px">or tap the link in the email instead</p>
+      <button id="gate_resend" class="btn" style="width:100%;justify-content:center;display:flex;font-size:14px;padding:10px">Resend email</button>
+      <button id="gate_back" style="margin-top:10px;background:none;border:none;color:#8089a3;font-size:12.5px;cursor:pointer;text-decoration:underline">Use a different email</button>
+    </div>
+    <p id="gatemsg" style="margin:14px 0 0;color:#b00020;font-size:12px;min-height:14px"></p>
+  </div>
+</div>
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div class="brand"><span id="brandmain">Road to 70.3</span> <small>IRONMAN 70.3 La Quinta · Training Tracker</small></div>
+      <div class="countdown"><div class="num" id="cd">—</div><div class="lbl">days to race day</div></div>
+    </div>
+    <div class="progwrap">
+      <div class="progbar"><div class="progfill" id="ovfill"></div></div>
+      <div class="progmeta"><span id="ovleft">—</span><span id="ovright">Race: Sun 5 Dec 2027</span></div>
+    </div>
+  </div>
+</header>
+<nav><div class="wrap">
+  <button class="tab active" data-v="home">Dashboard</button>
+  <button class="tab" data-v="plan">Plan</button>
+  <button class="tab" data-v="leaderboard">Leaderboard</button>
+  <button id="gear" title="Settings · sync &amp; backup" aria-label="Settings, sync and backup">&#9881;</button>
+</div></nav>
+<main>
+  <!-- PLAN -->
+  <section class="view" id="plan">
+    <div class="toolbar">
+      <button class="btn primary small" id="jumpcur">Jump to this week</button>
+      <select id="phasefilter">
+        <option value="all">All phases</option>
+        <option>Foundation</option><option>Base</option>
+        <option>Build &amp; Integrate</option><option>Peak</option><option>Taper &amp; Race</option>
+      </select>
+    </div>
+    <div id="weeks"></div>
+  </section>
+  <!-- DASHBOARD -->
+  <section class="view active" id="home">
+    <div class="periodbar">
+      <span class="plabel">Stats shown for</span>
+      <select id="d_mode">
+        <option value="total">Whole plan (total)</option>
+        <option value="week" selected>A week</option>
+        <option value="month">A month</option>
+      </select>
+      <select id="d_week" style="display:none"></select>
+      <select id="d_month" style="display:none"></select>
+      <span id="d_range" class="note"></span>
+    </div>
+    <div id="homecards" class="homewrap"></div>
+    <p class="note" id="homenote" style="text-align:center;margin-top:6px"></p>
+  </section>
+  <!-- LEADERBOARD -->
+  <section class="view" id="leaderboard">
+    <div class="periodbar">
+      <span class="plabel">Leaderboard</span>
+      <select id="lb_mode">
+        <option value="week" selected>This week</option>
+        <option value="all">Overall (whole plan)</option>
+      </select>
+      <button class="btn" id="lb_refresh" style="padding:6px 12px;font-size:13px">Refresh</button>
+    </div>
+    <div id="lbbody" class="homewrap"></div>
+    <p class="note" id="lbnote" style="text-align:center;margin-top:6px"></p>
+  </section>
+</main>
+
+<!-- SETTINGS / SYNC / BACKUP (opened from the gear button) -->
+<div class="modal" id="settings">
+  <div class="modalcard">
+    <div class="modalhead"><strong>Settings · Sync &amp; Backup</strong><button class="modalx" id="closemodal" aria-label="Close">&times;</button></div>
+    <div class="card">
+      <strong>Backup &amp; restore</strong>
+      <p class="note">Your progress is saved automatically in this browser. Use these to move it to another device or keep a safe copy.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="export">Export my data</button>
+        <button class="btn" id="importbtn">Import data</button>
+        <input type="file" id="importfile" accept="application/json" style="display:none">
+        <button class="btn danger" id="reset">Reset everything</button>
+      </div>
+      <p class="note" id="datamsg"></p>
+    </div>
+    <div class="card">
+      <strong>Account &amp; cloud sync</strong>
+      <p class="note">Status: <strong id="syncstat2">…</strong>. Sign in with your email (one-time link &amp; code, no password) to save your progress to your account so it's safe even if you clear your browser, and syncs automatically across all your devices.</p>
+      <div id="acct_out" style="display:none;margin-top:12px">
+        <div class="row" style="gap:8px">
+          <input id="acct_email_in" type="email" autocomplete="email" placeholder="you@example.com" style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #d6dbe8;border-radius:8px;font-size:14px;outline:none">
+          <button class="btn primary" id="btn_emaillink">Email me a link</button>
+        </div>
+      </div>
+      <div id="acct_in" style="display:none;margin-top:12px">
+        <p class="note" style="margin:0 0 10px">Signed in as <strong id="acct_email">—</strong></p>
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="acct_name" type="text" maxlength="24" placeholder="Display name" style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #d6dbe8;border-radius:8px;font-size:14px;outline:none">
+          <button class="btn" id="btn_savename">Save name</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="btn_sync">Sync now</button>
+          <button class="btn danger" id="btn_signout">Sign out</button>
+        </div>
+      </div>
+      <p class="note" id="sbmsg"></p>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <strong>About</strong>
+      <p class="note">A tracker for your 18-month IRONMAN 70.3 La Quinta plan (77 weeks, 15 Jun 2026 → 5 Dec 2027). Sign in with your email (one-time link &amp; code, no password) to save your check-offs and workouts to your account, so they sync across your devices and are safe even if you clear your browser. You can also export a copy anytime above. Confirm the race date when 2027 registration opens.</p>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK LOG (opened from a plan tile) -->
+<div class="modal" id="qlog">
+  <div class="modalcard" style="max-width:560px">
+    <div class="modalhead"><strong id="ql_title">Log workout</strong><button class="modalx" id="ql_close" aria-label="Close">&times;</button></div>
+    <p class="note" id="ql_sub" style="margin-top:-6px"></p>
+    <div class="card" style="margin-bottom:0">
+      <div class="formgrid">
+        <div class="fld" id="ql_sportfld" style="display:none"><label>Sport</label><select id="ql_sport">
+          <option value="swim">Swim</option><option value="bike">Bike</option><option value="run">Run</option>
+          <option value="strength">Strength</option><option value="brick">Brick</option></select></div>
+        <div class="fld"><label>Date</label><input type="date" id="ql_date"></div>
+        <div class="fld"><label>Duration (min)</label><input type="number" id="ql_dur" min="0" step="5" placeholder="e.g. 60"></div>
+        <div class="fld" id="ql_distfld"><label>Distance</label><input type="number" id="ql_dist" min="0" step="0.1" placeholder="optional"></div>
+        <div class="fld" id="ql_unitfld"><label>Unit</label><select id="ql_unit"><option>mi</option><option>km</option><option>m</option><option>yd</option></select></div>
+        <div class="fld" id="ql_envfld"><label>Environment</label><select id="ql_env"><option>Outdoor</option><option>Indoor</option></select></div>
+        <div class="fld" id="ql_elevfld"><label>Elevation gain</label><input type="number" id="ql_elev" min="0" step="1" placeholder="optional"></div>
+        <div class="fld" id="ql_elevunitfld"><label>Elev. unit</label><select id="ql_elevunit"><option>ft</option><option>m</option></select></div>
+        <div class="fld" id="ql_effortfld"><label>Effort</label><select id="ql_effort">
+          <option>Easy (Z1&#8211;2)</option><option>Tempo (Z3)</option><option>Threshold (Z4)</option><option>Hard (Z5)</option></select></div>
+        <div class="fld" style="grid-column:1/-1"><label>Notes</label><input type="text" id="ql_notes" placeholder="How did it feel? Fuel? Anything to remember&#8230;"></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" id="ql_save">Save &amp; check off &#10003;</button>
+        <button class="btn" id="ql_cancel">Cancel</button>
+        <button class="btn danger" id="ql_delete" style="display:none;margin-left:auto">Delete this workout</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const PLAN = /*PLAN_DATA*/;
+const SPORTC = {swim:"var(--swim)",bike:"var(--bike)",run:"var(--run)",strength:"var(--strength)",brick:"var(--brick)",rest:"var(--rest)"};
+const SPORTHEX = {swim:"#2e86de",bike:"#27ae60",run:"#e67e22",strength:"#8e44ad",brick:"#16a085",rest:"#9aa3b2"};
+const PHASEC = {"Foundation":"#5b8def","Base":"#27ae60","Build & Integrate":"#e6a817","Peak":"#e67e22","Taper & Race":"#b0578d"};
+const KEY="im703_tracker_v1";
+let S = load();
+let _saveWarned=false;
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+function save(){
+  try{
+    const str=JSON.stringify(S);
+    localStorage.setItem(KEY,str);
+    if(localStorage.getItem(KEY)!==str) throw new Error("verify failed");
+    hideSaveWarn();
+  }catch(e){ showSaveWarn(); }
+  queueCloud();
+}
+function showSaveWarn(){
+  if(_saveWarned)return; _saveWarned=true;
+  let b=document.getElementById("savewarn");
+  if(!b){
+    b=document.createElement("div");b.id="savewarn";
+    b.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#b00020;color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;box-shadow:0 -2px 8px rgba(0,0,0,.3)";
+    document.body.appendChild(b);
+  }
+  b.innerHTML="\u26a0 This browser isn't letting the tracker save your progress \u2014 likely private/incognito mode or blocked site storage. Open the <strong>Backup</strong> tab and export your data so nothing is lost, then use a normal (non-incognito) window.";
+  b.style.display="block";
+}
+function hideSaveWarn(){_saveWarned=false;const b=document.getElementById("savewarn");if(b)b.style.display="none";}
+S.checks=S.checks||{}; S.logs=S.logs||[]; S.tests=S.tests||{}; S.dayOrder=S.dayOrder||{}; S.itemOverride=S.itemOverride||{}; S.itemRemoved=S.itemRemoved||{}; S.itemAdded=S.itemAdded||{}; S.username=S.username||"";
+/* Ask the browser to keep this data and not evict it under storage pressure. */
+try{ if(navigator.storage&&navigator.storage.persist){navigator.storage.persist();} }catch(e){}
+/* Probe write so we warn immediately if this environment can't persist data. */
+try{ const _p="__im703_probe__"; localStorage.setItem(_p,"1"); if(localStorage.getItem(_p)!=="1"){showSaveWarn();} localStorage.removeItem(_p); }catch(e){ showSaveWarn(); }
+
+/* ===== CLOUD BACKEND (Supabase Auth + per-account database) ==========
+   Users sign in with Google; each account's progress is stored in its own
+   row of the "tracker" table (row id = the user's auth UID) and protected
+   by row-level security so a user can only read/write their own data.
+   SUPABASE_KEY is the publishable key \u2013 safe to ship in a public file.   */
+const SUPABASE_URL = "https://fcmskguzqbuszzxmmbao.supabase.co";
+const SUPABASE_KEY = "sb_publishable_VQeGOjkkLlkE0_DuZfMapQ_flzpFzuT";
+const sbClient = (window.supabase && SUPABASE_URL && SUPABASE_KEY)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY,
+      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})
+  : null;
+let SESSION = null;
+function authUser(){ return (SESSION && SESSION.user) ? SESSION.user : null; }
+function isGuest(){ return localStorage.getItem("im703_guest")==="1"; }
+/* Cloud is active only when a Supabase client exists AND the user is logged in. */
+function cloudOn(){ return !!(sbClient && authUser()); }
+function defaultState(){ return {checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{},username:""}; }
+let _syncTimer=null;
+function setSync(txt){["syncstat","syncstat2"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
+  let pill=document.getElementById("syncpill");
+  if(!pill){pill=document.createElement("div");pill.id="syncpill";
+    pill.style.cssText="position:fixed;top:8px;right:8px;z-index:9998;background:rgba(20,30,50,.85);color:#fff;font-size:11px;padding:4px 9px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none";
+    document.body.appendChild(pill);}
+  pill.textContent=txt; pill.style.display=cloudOn()?"block":"none";
+}
+let _lastCloudErr="";
+function showCloudErr(e){ _lastCloudErr=(e&&e.message)?e.message:String(e); try{console.warn("[cloud]",_lastCloudErr);}catch(_){}; const m=document.getElementById("sbmsg"); if(m)m.textContent="Cloud error: "+_lastCloudErr; }
+async function cloudPull(){
+  if(!cloudOn())return null;
+  try{ setSync("Syncing\u2026");
+    const {data,error}=await sbClient.from("tracker").select("data,updated_at").eq("id",authUser().id).maybeSingle();
+    if(error) throw error;
+    setSync("Synced \u2713"); return data||null;
+  }catch(e){ setSync("Offline \u2013 not saved"); showCloudErr(e); return null; }
+}
+async function cloudPush(){
+  if(!cloudOn())return;
+  try{ setSync("Saving\u2026");
+    const {error}=await sbClient.from("tracker").upsert({id:authUser().id,data:S,updated_at:new Date().toISOString()});
+    if(error) throw error;
+    setSync("Synced \u2713"); const m=document.getElementById("sbmsg"); if(m&&/^Cloud error/.test(m.textContent))m.textContent="Synced \u2713";
+    pushLeaderboard();
+  }catch(e){ setSync("Offline \u2013 not saved"); showCloudErr(e); }
+}
+function queueCloud(){ if(!cloudOn())return; clearTimeout(_syncTimer); _syncTimer=setTimeout(cloudPush,800); }
+/* ---- leaderboard: shared cross-user stats ---- */
+function computeMyStats(){
+  const sports=["swim","bike","run"], cw=currentWeek(), st={};
+  sports.forEach(sp=>{ st[sp]={distWeek:0,distAll:0,paceWeek:null,paceAll:null}; });
+  (S.logs||[]).forEach(l=>{
+    if(!st[l.sport])return;
+    const km=toKm(l.dist,l.unit), s=st[l.sport], inWk=weekOfDate(l.date)===cw;
+    if(km>0){ s.distAll+=km; if(inWk)s.distWeek+=km;
+      if(l.dur>0){ const pace=l.dur/km;
+        if(s.paceAll===null||pace<s.paceAll)s.paceAll=pace;
+        if(inWk&&(s.paceWeek===null||pace<s.paceWeek))s.paceWeek=pace; } }
+  });
+  return st;
+}
+async function pushLeaderboard(){
+  if(!cloudOn())return;
+  try{
+    const uname=((S.username||"").trim())||"Athlete";
+    await sbClient.from("leaderboard").upsert({id:authUser().id,username:uname,stats:computeMyStats(),updated_at:new Date().toISOString()});
+  }catch(e){ showCloudErr(e); }
+}
+function updateHero(){
+  const n=(S.username||"").trim(), el=document.getElementById("brandmain");
+  if(el)el.textContent = n ? (n+"\u2019s Road to 70.3") : "Road to 70.3";
+}
+/* ---- leaderboard ---- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const SPORT_META={swim:{icon:"\uD83C\uDFCA",label:"Swim",color:"#0ea5b7"},bike:{icon:"\uD83D\uDEB4",label:"Bike",color:"#e8830c"},run:{icon:"\uD83C\uDFC3",label:"Run",color:"#16a34a"}};
+function fmtDist(km){ if(km==null||!isFinite(km)||km<=0)return "0 km"; return (km>=10?km.toFixed(1):km.toFixed(2)).replace(/\.?0+$/,"")+" km"; }
+function fmtPace(sport,minPerKm){
+  if(minPerKm==null||!isFinite(minPerKm)||minPerKm<=0)return "\u2014";
+  if(sport==="bike"){ const kmh=60/minPerKm; return kmh.toFixed(1)+" km/h"; }
+  let perUnit, unit;
+  if(sport==="swim"){ perUnit=minPerKm/10; unit="/100m"; } // min per 100m (1km=10x100m)
+  else { perUnit=minPerKm; unit="/km"; }
+  const m=Math.floor(perUnit), s=Math.round((perUnit-m)*60);
+  let mm=m, ss=s; if(ss===60){ mm+=1; ss=0; }
+  return mm+":"+String(ss).padStart(2,"0")+" "+unit;
+}
+let _lbRows=null;
+async function fetchLeaderboard(){
+  if(!cloudOn())return null;
+  const {data,error}=await sbClient.from("leaderboard").select("id,username,stats");
+  if(error)throw error;
+  return data||[];
+}
+function rankRows(rows,sport,distKey,paceKey,myId){
+  const dist=rows.map(r=>({id:r.id,name:r.username||"Athlete",v:(r.stats&&r.stats[sport]&&r.stats[sport][distKey])||0}))
+    .filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const pace=rows.map(r=>({id:r.id,name:r.username||"Athlete",v:(r.stats&&r.stats[sport]&&r.stats[sport][paceKey])}))
+    .filter(x=>x.v!=null&&x.v>0).sort((a,b)=>a.v-b.v);
+  return {dist,pace};
+}
+function lbTable(title,rows,sport,fmt,myId){
+  if(!rows.length)return `<div class="lbkpi"><div class="lbkpi-h">${title}</div><div class="lbempty">No data logged yet.</div></div>`;
+  let h=`<div class="lbkpi"><div class="lbkpi-h">${title}</div><ol class="lblist">`;
+  rows.slice(0,5).forEach((x,i)=>{
+    const me=x.id===myId?' lb-me':'';
+    const medal=i===0?"\uD83E\uDD47":i===1?"\uD83E\uDD48":i===2?"\uD83E\uDD49":(i+1)+".";
+    h+=`<li class="lbrow${me}"><span class="lbrank">${medal}</span><span class="lbname">${esc(x.name)}${me?' <em>(you)</em>':''}</span><span class="lbval">${fmt(x.v)}</span></li>`;
+  });
+  h+="</ol></div>";
+  return h;
+}
+async function renderLeaderboard(){
+  const body=document.getElementById("lbbody"), note=document.getElementById("lbnote");
+  if(!body)return;
+  if(!cloudOn()){ body.innerHTML='<p class="note" style="text-align:center;padding:24px 0">Sign in to see the leaderboard.</p>'; if(note)note.textContent=""; return; }
+  const modeEl=document.getElementById("lb_mode"), mode=modeEl?modeEl.value:"week";
+  const distKey=mode==="week"?"distWeek":"distAll", paceKey=mode==="week"?"paceWeek":"paceAll";
+  body.innerHTML='<p class="note" style="text-align:center;padding:24px 0">Loading…</p>';
+  try{
+    await pushLeaderboard();
+    _lbRows=await fetchLeaderboard();
+  }catch(e){ body.innerHTML='<p class="note" style="text-align:center;padding:24px 0;color:#b00020">Could not load leaderboard.</p>'; showCloudErr(e); return; }
+  const rows=_lbRows||[], myId=(cloudOn()&&authUser())?authUser().id:null;
+  let html="";
+  ["swim","bike","run"].forEach(sp=>{
+    const m=SPORT_META[sp], r=rankRows(rows,sp,distKey,paceKey,myId);
+    html+=`<div class="lbsport"><div class="lbsport-h" style="color:${m.color}"><span class="lbsport-i">${m.icon}</span>${m.label}</div><div class="lbkpis">`;
+    html+=lbTable("Most distance",r.dist,sp,fmtDist,myId);
+    html+=lbTable("Fastest pace",r.pace,sp,v=>fmtPace(sp,v),myId);
+    html+="</div></div>";
+  });
+  body.innerHTML=html;
+  if(note)note.textContent=(mode==="week"?"This week":"Whole plan")+" \u00b7 "+rows.length+" athlete"+(rows.length===1?"":"s")+" \u00b7 ranking updates when you log workouts.";
+}
+/* ---- auth actions (passwordless email: magic link + 6-digit code) ---- */
+let _pendingEmail="";
+function gateMsg(t,err){ const g=document.getElementById("gatemsg"); if(g){ g.style.color=err===false?"#1a8f3c":"#b00020"; g.textContent=t||""; } }
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+/* Gate has two modes: "signin" (returning \u2013 email remembered, no name asked)
+   and "signup" (first time \u2013 ask for a name). It opens in whichever fits. */
+let _gateMode="signin";
+function rememberedEmail(){ try{ return localStorage.getItem("im703_last_email")||""; }catch(_){ return ""; } }
+function setGateMode(mode,email){
+  _gateMode=(mode==="signup")?"signup":"signin";
+  const title=document.getElementById("gate_title"), intro=document.getElementById("gate_intro"),
+        nameWrap=document.getElementById("gate_namewrap"), emailEl=document.getElementById("gate_email"),
+        sendBtn=document.getElementById("gate_send"),
+        tIn=document.getElementById("gate_tab_signin"), tUp=document.getElementById("gate_tab_signup");
+  // tab styling
+  const active="background:#fff;color:#28304a;box-shadow:0 1px 2px rgba(0,0,0,.08)", idle="background:transparent;color:#5a6480";
+  const baseTab="flex:1;border:none;border-radius:8px;padding:9px 0;font-size:14px;font-weight:600;cursor:pointer;";
+  if(tIn)tIn.style.cssText=baseTab+(_gateMode==="signin"?active:idle);
+  if(tUp)tUp.style.cssText=baseTab+(_gateMode==="signup"?active:idle);
+  if(_gateMode==="signin"){
+    if(title)title.textContent="Welcome back";
+    if(intro)intro.innerHTML="Sign in with your email &mdash; we'll send a one-time link to confirm it's you. No password needed.";
+    if(nameWrap)nameWrap.style.display="none";
+    if(emailEl)emailEl.value=(email!==undefined?email:rememberedEmail());
+    if(sendBtn)sendBtn.textContent="Email me a sign-in link";
+  } else {
+    if(title)title.textContent="Create your account";
+    if(intro)intro.innerHTML="Enter your name and email and we'll send you a one-time link to finish &mdash; no password needed. Your progress saves to your account and syncs across all your devices.";
+    if(nameWrap)nameWrap.style.display="";
+    if(emailEl&&email!==undefined)emailEl.value=email;
+    if(sendBtn)sendBtn.textContent="Email me a sign-up link";
+  }
+  gateMsg("");
+}
+function initGate(){
+  const last=rememberedEmail();
+  // Returning device opens straight into Sign in (email prefilled); otherwise still
+  // default to Sign in so existing users on a fresh/incognito tab can get in by email.
+  setGateMode("signin", last);
+}
+function toggleGateMode(mode){
+  setGateMode(mode, mode==="signin"?rememberedEmail():"");
+  const f=document.getElementById(mode==="signup"?"gate_name":"gate_email"); if(f)f.focus();
+}
+async function sendEmailLink(email){
+  if(!sbClient){ gateMsg("Login isn't configured yet."); return; }
+  email=(email||"").trim();
+  const nameEl=document.getElementById("gate_name");
+  let name=(nameEl?nameEl.value:"").trim().slice(0,24);
+  if(_gateMode==="signup" && !name){ gateMsg("Please enter your name."); if(nameEl)nameEl.focus(); return; }
+  if(!validEmail(email)){ gateMsg("Please enter a valid email address."); return; }
+  if(_gateMode==="signin" && !name){ try{ name=localStorage.getItem("im703_last_name")||""; }catch(_){} }
+  const isSignup=(_gateMode==="signup");
+  try{ if(name)localStorage.setItem("im703_pending_name",name); localStorage.setItem("im703_last_email",email); if(name)localStorage.setItem("im703_last_name",name); }catch(_){}
+  const btn=document.getElementById("gate_send"); if(btn){ btn.disabled=true; btn.textContent="Sending…"; }
+  try{
+    const opts={emailRedirectTo:location.origin+location.pathname,shouldCreateUser:isSignup};
+    if(name)opts.data={username:name};
+    const {error}=await sbClient.auth.signInWithOtp({email,options:opts});
+    if(error){
+      // Signing in with an email that has no account yet
+      if(!isSignup && /not.*(found|exist)|signups? not allowed|otp_disabled|user_not_found/i.test(error.message||"")){
+        gateMsg("No account found for that email. Tap \u201cSign up\u201d to create one.");
+        const btn2=document.getElementById("gate_send"); if(btn2){ btn2.disabled=false; btn2.textContent="Email me a sign-in link"; }
+        return;
+      }
+      throw error;
+    }
+    _pendingEmail=email;
+    const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2"), st=document.getElementById("gate_sentto");
+    if(st)st.textContent=email;
+    if(s1)s1.style.display="none"; if(s2)s2.style.display="";
+    gateMsg("");
+  }catch(e){ gateMsg((e&&e.message)||"Couldn't send the email. Try again."); showCloudErr(e); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent=isSignup?"Email me a sign-up link":"Email me a sign-in link"; } }
+}
+function gateBackToEmail(){
+  const s1=document.getElementById("gate_step1"), s2=document.getElementById("gate_step2");
+  if(s1)s1.style.display=""; if(s2)s2.style.display="none";
+  _pendingEmail=""; gateMsg("");
+  const ci=document.getElementById("gate_code"); if(ci)ci.value="";
+  if(typeof initGate==="function") initGate();
+  const ei=document.getElementById("gate_email"); if(ei)ei.focus();
+}
+async function verifyCode(code){
+  if(!sbClient){ gateMsg("Login isn't configured yet."); return; }
+  code=(code||"").replace(/\D/g,"").trim();
+  const email=(_pendingEmail||"").trim();
+  if(!email){ gateMsg("Enter your email again."); gateBackToEmail(); return; }
+  if(code.length<6){ gateMsg("Enter the 6-digit code from the email."); return; }
+  const btn=document.getElementById("gate_verify"); if(btn){ btn.disabled=true; btn.textContent="Verifying…"; }
+  try{
+    const {error}=await sbClient.auth.verifyOtp({email,token:code,type:"email"});
+    if(error){
+      if(/expired|invalid|token/i.test(error.message||"")){
+        gateMsg("That code is wrong or expired. Check the latest email or tap Resend.");
+      } else { throw error; }
+      return;
+    }
+    gateMsg(""); /* SIGNED_IN fires -> afterAuth() hides the gate */
+  }catch(e){ gateMsg((e&&e.message)||"Couldn't verify the code. Try again."); showCloudErr(e); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="Verify & sign in"; } }
+}
+async function signOutUser(){
+  try{ if(sbClient) await sbClient.auth.signOut(); }catch(e){}
+  localStorage.removeItem("im703_guest"); SESSION=null; location.reload();
+}
+function continueAsGuest(){ localStorage.setItem("im703_guest","1"); updateAuthUI(); }
+function updateAuthUI(){
+  try{ localStorage.removeItem("im703_guest"); }catch(_){}  // guest mode retired
+  const loggedIn=!!authUser(), gate=document.getElementById("authgate");
+  if(gate){ const show=!(loggedIn||!sbClient); if(show && gate.style.display!=="flex"){ const s1=document.getElementById("gate_step1"),s2=document.getElementById("gate_step2"); if(s2&&s2.style.display!=="none"){} else if(typeof initGate==="function") initGate(); } gate.style.display=show?"flex":"none"; }
+  const out=document.getElementById("acct_out"), inn=document.getElementById("acct_in"), em=document.getElementById("acct_email");
+  if(out) out.style.display=loggedIn?"none":"";
+  if(inn) inn.style.display=loggedIn?"":"none";
+  if(em&&loggedIn) em.textContent=(authUser().email)||(authUser().user_metadata&&authUser().user_metadata.email)||"your account";
+  const nm=document.getElementById("acct_name"); if(nm&&loggedIn&&document.activeElement!==nm) nm.value=(S.username||"");
+  setSync(loggedIn?"Synced \u2713":"Not signed in");
+  updateHero();
+}
+
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const fmtDate=iso=>{const d=new Date(iso+"T00:00:00");return d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})};
+const fmtShort=iso=>{const d=new Date(iso+"T00:00:00");return d.toLocaleDateString(undefined,{day:"numeric",month:"short"})};
+function weekEnd(iso){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
+function addDaysISO(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function currentWeek(){
+  const t=new Date(todayISO()+"T00:00:00"), s=new Date(PLAN.start+"T00:00:00");
+  const idx=Math.floor((t-s)/(7*864e5))+1;
+  return Math.min(Math.max(idx,1),PLAN.nWeeks);
+}
+function weekOfDate(iso){
+  const d=new Date(iso+"T00:00:00"), s=new Date(PLAN.start+"T00:00:00");
+  return Math.floor((d-s)/(7*864e5))+1;
+}
+
+/* ---------- countdown + overall ---------- */
+function renderTop(){
+  const t=new Date(todayISO()+"T00:00:00"), r=new Date(PLAN.race+"T00:00:00");
+  const days=Math.round((r-t)/864e5);
+  $("#cd").textContent=days>0?days:(days===0?"TODAY":"done");
+  let total=0,done=0;
+  PLAN.weeks.forEach(w=>weekItems(w).forEach(it=>{if(it.sport!=="rest"){total++;if(S.checks[it.id])done++;}}));
+  const pct=total?Math.round(done/total*100):0;
+  $("#ovfill").style.width=pct+"%";
+  $("#ovleft").textContent=done+" / "+total+" sessions done · "+pct+"%";
+}
+
+/* ---------- donut for week ---------- */
+function donut(pct,size=42){
+  const r=size/2-4, c=2*Math.PI*r, off=c*(1-pct/100);
+  const col=pct>=100?"#27ae60":(pct>0?"#2e5496":"#cfd6e4");
+  return `<svg class="wprog" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#eef1f7" stroke-width="5"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="5"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+      stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="800" fill="#1f3864">${pct}</text>
+  </svg>`;
+}
+function phaseIndex(ph){return PLAN.phases.indexOf(ph);}
+function orderFor(w){
+  const pi=phaseIndex(w.phase), n=w.days.length;
+  if(!S.dayOrder[pi]||S.dayOrder[pi].length!==n){
+    S.dayOrder[pi]=Array.from({length:n},(_,i)=>i);
+  }
+  return S.dayOrder[pi];
+}
+// Effective workout list for one day: base plan items minus any the user removed,
+// plus any the user added. Each entry carries its stable checkoff id and base {sport,label}.
+function dayItems(w,di){
+  const out=[];
+  (w.days[di]||[]).forEach((it,ii)=>{
+    const id=w.n+"-"+di+"-"+ii;
+    if(S.itemRemoved[id])return;
+    out.push({id,base:it,added:false});
+  });
+  (S.itemAdded[w.n+"-"+di]||[]).forEach(a=>{
+    out.push({id:w.n+"-"+di+"-a"+a.aid,base:{sport:a.sport,label:a.label},added:true});
+  });
+  return out;
+}
+// Flat list of every workout item in a week with its canonical checkoff id.
+function weekItems(w){
+  const out=[];
+  w.days.forEach((day,di)=>dayItems(w,di).forEach(item=>{
+    const ov=S.itemOverride[item.id];
+    out.push({sport:ov?ov.sport:item.base.sport,id:item.id});
+  }));
+  return out;
+}
+function weekDone(w){
+  let t=0,d=0;
+  weekItems(w).forEach(it=>{if(it.sport!=="rest"){t++;if(S.checks[it.id])d++;}});
+  return {t,d,pct:t?Math.round(d/t*100):0};
+}
+
+/* ---------- Plan view ---------- */
+/* ---------- Animated illustrated scenes (one per sport) ---------- */
+const SPORTNAME={swim:"Swim",bike:"Bike",run:"Run",strength:"Strength",brick:"Brick",rest:"Rest"};
+const DEFAULTLABEL={swim:"Swim",bike:"Bike",run:"Run",strength:"Strength",brick:"Brick (bike → run)",rest:"Rest / recovery"};
+const SWAPTYPES=["swim","bike","run","strength","brick","rest"];
+function typeOpts(sel,orig){return SWAPTYPES.map(s=>`<option value="${s}"${s===sel?" selected":""}${s===orig?' class="orig"':''}>${SPORTNAME[s]}${s===orig?" (original)":""}</option>`).join("");}
+function wheelG(x){return `<g transform="translate(${x} 18)"><g class="wheel">
+    <circle r="8.4" fill="#2b2f3a"/><circle r="7.6" fill="none" stroke="#3c424f" stroke-width="1.4"/>
+    <circle r="4.6" fill="#fff"/><circle r="1.9" fill="#ffce4a"/>
+    <line x1="-4.4" y1="0" x2="4.4" y2="0" stroke="#cfd6e4" stroke-width="1.2"/>
+    <line x1="0" y1="-4.4" x2="0" y2="4.4" stroke="#cfd6e4" stroke-width="1.2"/></g></g>`;}
+function bikeGlyph(){return `
+  ${wheelG(2)}${wheelG(26)}
+  <path d="M2 18 L14 18 L8 7 Z M14 18 L20 7 L26 18 M8 7 L20 7" fill="none" stroke="#ff5d8f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="5" y="5.2" width="6.5" height="2.6" rx="1.3" fill="#2b2f3a"/>
+  <line x1="18.5" y1="7" x2="24" y2="3.4" stroke="#2b2f3a" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M9 7 Q13 0 18.5 2.6" stroke="#6a5cff" stroke-width="5.4" fill="none" stroke-linecap="round"/>
+  <line x1="16" y1="0.5" x2="23.5" y2="3.4" stroke="#ffd9b3" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="14.5" cy="-4" r="6" fill="#ffe0bd"/>
+  <path d="M8.6 -4.4 a6 6 0 0 1 12 0 Z" fill="#22b8ff"/>
+  <rect x="8.4" y="-5" width="12.2" height="2.2" rx="1.1" fill="#1f95da"/>
+  <path d="M14.5 -10 q3.3 -0.4 3 2.4" stroke="#22b8ff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <circle cx="17.4" cy="-4" r="1.05" fill="#2b2f3a"/>
+  <path d="M16 -1.4 q1.6 1.5 3.1 0" stroke="#c2724a" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  <circle cx="12.4" cy="-2" r="1.5" fill="#ff9bb5"/>`;}
+function runnerGlyph(){return `
+  <g transform="translate(0 14)"><line class="legb" x1="0" y1="0" x2="-5.4" y2="12" stroke="#6a5cff" stroke-width="4.4" stroke-linecap="round"/></g>
+  <g transform="translate(0 14)"><line class="legf" x1="0" y1="0" x2="6.4" y2="12" stroke="#7b54e0" stroke-width="4.4" stroke-linecap="round"/></g>
+  <path d="M0.5 3 L0.5 14.5" stroke="#ff8a3d" stroke-width="6.2" stroke-linecap="round"/>
+  <line x1="0.5" y1="6" x2="8" y2="2.4" stroke="#ffd9b3" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="0.5" y1="6" x2="-7" y2="9.4" stroke="#ffd9b3" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="1" cy="-3.4" r="6" fill="#ffe0bd"/>
+  <path d="M-4.6 -5.6 q5.6 -3.4 11.2 0" stroke="#ff5d8f" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M1.2 -9.6 q3.3 -1 3.2 2.2" stroke="#6b4a33" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="4" cy="-3.4" r="1.05" fill="#2b2f3a"/>
+  <path d="M2.8 -0.9 q1.6 1.5 3.1 0" stroke="#c2724a" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  <circle cx="-0.4" cy="-1.3" r="1.5" fill="#ff9bb5"/>`;}
+const SCENES={
+  swim:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#cdeeff"/><circle cx="84" cy="13" r="7.5" fill="#ffe14a"/><circle cx="84" cy="13" r="7.5" fill="#fff3b0" opacity=".45"/>
+    <rect y="24" width="100" height="40" fill="#39a9ec"/>
+    <path class="wave" d="M-25 24 q6.25 -5 12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 V64 H-25 Z" fill="#6fc4f2"/>
+    <path class="wave f" d="M-25 28 q6.25 5 12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 t12.5 0 V64 H-25 Z" fill="#2f8fd6" opacity=".7"/>
+    <circle cx="34" cy="40" r="1.7" fill="#cdeeff" opacity=".85"/><circle cx="40" cy="44" r="1.1" fill="#cdeeff" opacity=".8"/><circle cx="30" cy="45" r="1" fill="#cdeeff" opacity=".7"/>
+    <g class="swimmer">
+      <path d="M30 34 q-7 -1.5 -12 2.5" stroke="#ff6fa5" stroke-width="4.6" fill="none" stroke-linecap="round"/>
+      <ellipse cx="46" cy="34" rx="15" ry="6.4" fill="#ff6fa5"/>
+      <circle cx="60.5" cy="31" r="7" fill="#ffe0bd"/>
+      <path d="M53.5 31 a7 7 0 0 1 14 0 Z" fill="#ffce4a"/>
+      <ellipse cx="63.5" cy="31" rx="2.6" ry="2.1" fill="#dff3ff" stroke="#5a6b8c" stroke-width="1"/>
+      <path d="M61.5 35 q2 1.7 4 0" stroke="#c2724a" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <circle cx="56.5" cy="33.4" r="1.5" fill="#ff9bb5"/>
+      <path class="arm" d="M48 31 q9 -9 15 -2.5" stroke="#ffe0bd" stroke-width="4.2" fill="none" stroke-linecap="round"/></g></svg>`,
+  bike:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#dff3ff"/><circle cx="20" cy="13" r="7.5" fill="#ffe14a"/><circle cx="20" cy="13" r="7.5" fill="#fff3b0" opacity=".45"/>
+    <ellipse cx="78" cy="50" rx="26" ry="13" fill="#bfe8c4"/><ellipse cx="30" cy="52" rx="22" ry="11" fill="#a9dfb4"/>
+    <rect y="48" width="100" height="16" fill="#6b6f7a"/>
+    <line class="lane" x1="-20" y1="56" x2="120" y2="56" stroke="#ffe14a" stroke-width="3"/>
+    <g transform="translate(34 30)"><g class="biker">${bikeGlyph()}</g></g></svg>`,
+  run:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#eaf7e6"/><circle cx="82" cy="13" r="7.5" fill="#ffe14a"/><circle cx="82" cy="13" r="7.5" fill="#fff3b0" opacity=".45"/>
+    <g class="scn s">${[0,1,2,3].map(k=>`<circle cx="${18+50*k}" cy="44" r="9" fill="#9bd29b"/><circle cx="${39+50*k}" cy="42" r="11" fill="#86c98a"/>`).join("")}</g>
+    <rect y="46" width="100" height="18" fill="#caa46b"/>
+    <g class="scn">${[0,1,2,3].map(k=>`<circle cx="${8+50*k}" cy="56" r="1.6" fill="#a8854f"/><circle cx="${30+50*k}" cy="58" r="1.6" fill="#a8854f"/>`).join("")}</g>
+    <g transform="translate(46 30)"><g class="runner">${runnerGlyph()}</g></g></svg>`,
+  strength:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#f3edff"/><rect y="50" width="100" height="14" fill="#d9ccf7"/>
+    <g transform="translate(50 28)">
+      <circle cx="0" cy="-2" r="5.5" fill="#ffd9b3"/>
+      <path d="M0 3 L0 16" stroke="#9b6bff" stroke-width="5" stroke-linecap="round"/>
+      <line x1="0" y1="16" x2="-7" y2="28" stroke="#7b54e0" stroke-width="4" stroke-linecap="round"/>
+      <line x1="0" y1="16" x2="7" y2="28" stroke="#7b54e0" stroke-width="4" stroke-linecap="round"/>
+      <g class="bar"><line x1="0" y1="4" x2="-9" y2="-8" stroke="#ffd9b3" stroke-width="3.4" stroke-linecap="round"/>
+        <line x1="0" y1="4" x2="9" y2="-8" stroke="#ffd9b3" stroke-width="3.4" stroke-linecap="round"/>
+        <line x1="-18" y1="-9" x2="18" y2="-9" stroke="#2b2f3a" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="-18" cy="-9" r="5" fill="#ff5d8f"/><circle cx="18" cy="-9" r="5" fill="#ff5d8f"/></g></g></svg>`,
+  brick:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#e6fbf6"/><rect y="48" width="100" height="16" fill="#6b6f7a"/>
+    <line class="lane" x1="-20" y1="56" x2="120" y2="56" stroke="#ffe14a" stroke-width="3"/>
+    <g transform="translate(6 31) scale(.82)"><g class="biker">${bikeGlyph()}</g></g>
+    <path d="M48 30 L58 30 M55 27 L58 30 L55 33" stroke="#16c0ac" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(76 31)"><g class="runner">${runnerGlyph()}</g></g></svg>`,
+  rest:`<svg class="scene" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="64" fill="#eef2fb"/>
+    <circle cx="78" cy="16" r="10" fill="#ffe9a8"/><circle cx="73" cy="13" r="9" fill="#eef2fb"/>
+    <circle cx="20" cy="14" r="1.5" fill="#cfd6e8"/><circle cx="40" cy="10" r="1.5" fill="#cfd6e8"/><circle cx="58" cy="22" r="1.5" fill="#cfd6e8"/>
+    <rect x="18" y="44" width="64" height="13" rx="6" fill="#c9d3ef"/><circle cx="33" cy="44" r="7" fill="#ffd9b3"/>
+    <text class="zz" x="44" y="40" font-size="11" font-weight="700" fill="#9aa6c4">z</text>
+    <text class="zz2" x="52" y="34" font-size="14" font-weight="700" fill="#9aa6c4">Z</text></svg>`
+};
+function sportScene(sport){return SCENES[sport]||SCENES.rest;}
+
+function renderPlan(){
+  const filt=$("#phasefilter").value, cur=currentWeek(), box=$("#weeks");
+  box.innerHTML="";
+  let lastPhase=null;
+  PLAN.weeks.forEach(w=>{
+    if(filt!=="all"&&w.phase!==filt)return;
+    if(w.phase!==lastPhase){
+      lastPhase=w.phase;
+      const ph=document.createElement("div");ph.className="phasehead";
+      ph.innerHTML=`<span class="pill" style="background:${PHASEC[w.phase]}">${w.phase}</span><span class="ln"></span>`;
+      box.appendChild(ph);
+    }
+    const wd=weekDone(w);
+    const el=document.createElement("div");
+    el.className="week"+(w.n===cur?" current open":"");
+    el.id="wk"+w.n;
+    el.innerHTML=`
+      <div class="whead">
+        <div class="wnum">W${w.n}<small>${fmtShort(w.weekOf)}–${fmtShort(weekEnd(w.weekOf))}</small></div>
+        <div class="wmeta">
+          ${w.milestone?`<div class="badgeflag">★ ${w.block==="Race Week"?"Race week":"Milestone"}</div>`:(w.deload?`<div class="badgeflag" style="color:#3b6">Recovery week</div>`:"")}
+          <div class="wtarget"><b>Swim</b> ${w.hours.swim}h · <b>Bike</b> ${w.dist.bike_mi} mi <span class="wtdim">(${w.hours.bike}h)</span> · <b>Run</b> ${w.dist.run_mi} mi <span class="wtdim">(${w.hours.run}h)</span> · <b>Strength</b> ${w.hours.strength}h</div>
+        </div>
+        <div class="whours">${w.hours.total}h<small>${wd.d}/${wd.t} done</small></div>
+        ${donut(wd.pct)}
+        <svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="wbody">
+        ${(()=>{const order=orderFor(w), pi=phaseIndex(w.phase);
+          return order.map((canon,di)=>{
+            const wd=PLAN.weekdays[di];
+            const items=dayItems(w,canon).map(item=>{
+              const id=item.id, it=item.base, ov=S.itemOverride[id];
+              const sp=ov?ov.sport:it.sport, lbl=ov?ov.label:it.label;
+              const on=!!S.checks[id], rest=sp==="rest";
+              const logged=S.logs.some(l=>l.planId===id);
+              const dt=addDaysISO(w.weekOf,di);
+              return `<div class="tile sport-${sp}${rest?" rest":""}${on?" done":""}" data-id="${id}">
+                <div class="tilescene">${sportScene(sp)}</div>
+                <div class="tiletext"><div class="tilelabel">${escapeHtml(lbl)}</div><div class="tilesport">${SPORTNAME[sp]||sp}</div>
+                </div>
+                <button type="button" class="removeitem" data-k="${id}" title="Remove this workout from the day">&times;</button>
+                <select class="typesel" data-k="${id}" title="Replace this workout with another type — the original is marked">${typeOpts(sp,it.sport)}</select>
+                ${rest?`<span class="restbadge">Rest day</span>`:`<input type="checkbox" class="tilecheck" data-k="${id}" ${on?"checked":""} disabled title="Checks off automatically when you log this workout">`+`
+                <button type="button" class="logbtn${logged?" edit":""}" data-k="${id}" data-sport="${sp}" data-date="${dt}" data-label="${escapeHtml(lbl)}">${logged?"Edit":"+ Log"}</button>`}
+              </div>`;}).join("");
+            const opts=PLAN.weekdays.map((d,j)=>`<option value="${j}"${j===di?" selected":""}>${d}</option>`).join("");
+            return `<div class="day">
+              <div class="dayhdr">
+                <span class="dayname">${wd}</span>
+                <span class="dayswap" title="Move this day's workout to another weekday">&#8646; <select data-ph="${pi}" data-pos="${di}">${opts}</select></span>
+              </div>
+              <div class="dayitems">${items}</div>
+              <button type="button" class="additem" data-day="${w.n+"-"+canon}" title="Add a workout to this day">+ Add workout</button>
+            </div>`;}).join("");})()}
+      </div>`;
+    box.appendChild(el);
+  });
+  $$(".whead",box).forEach(h=>h.addEventListener("click",e=>{
+    if(e.target.tagName==="INPUT")return;
+    h.parentElement.classList.toggle("open");
+  }));
+  // Checkboxes are read-only indicators: they check off only when a workout is logged.
+  $$(".logbtn",box).forEach(b=>b.addEventListener("click",e=>{
+    e.preventDefault(); e.stopPropagation();
+    const id=b.dataset.k, ex=S.logs.filter(l=>l.planId===id);
+    if(ex.length){ openEditLog(ex[ex.length-1].id); }   // already logged → edit it
+    else { openQuickLog(id,b.dataset.sport,b.dataset.date,b.dataset.label); }
+  }));
+  // Replace a single workout with any other type (per-day override). Picking the
+  // option marked "(original)" restores the original plan.
+  $$(".typesel",box).forEach(sel=>sel.addEventListener("change",e=>{
+    e.stopPropagation();
+    const id=sel.dataset.k, ns=sel.value, p=id.split("-");
+    const w=PLAN.weeks.find(x=>x.n===+p[0]);
+    const orig=w&&w.days[+p[1]]&&w.days[+p[1]][+p[2]];
+    if(orig&&ns===orig.sport){ delete S.itemOverride[id]; }
+    else { S.itemOverride[id]={sport:ns,label:DEFAULTLABEL[ns]||SPORTNAME[ns]||ns}; }
+    save();
+    const openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+    renderPlan(); renderTop();
+    openIds.forEach(x=>{const el2=$("#"+x);if(el2)el2.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+  // Remove a workout from a day. Base-plan items are flagged removed; user-added
+  // items are dropped. Any check, override, or logged session for it is cleared too.
+  $$(".removeitem",box).forEach(b=>b.addEventListener("click",e=>{
+    e.preventDefault(); e.stopPropagation();
+    const id=b.dataset.k, p=id.split("-"), wn=+p[0], di=+p[1];
+    if(/^a/.test(p[2])){
+      const key=wn+"-"+di, aid=p[2].slice(1);
+      S.itemAdded[key]=(S.itemAdded[key]||[]).filter(a=>String(a.aid)!==aid);
+      if(!S.itemAdded[key].length)delete S.itemAdded[key];
+    } else { S.itemRemoved[id]=1; }
+    delete S.checks[id]; delete S.itemOverride[id];
+    S.logs=S.logs.filter(l=>l.planId!==id);
+    save();
+    const openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+    renderPlan(); renderTop(); renderHome();
+    openIds.forEach(x=>{const el2=$("#"+x);if(el2)el2.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+  // Add a new workout to a day (defaults to Run — change its type with the dropdown).
+  $$(".additem",box).forEach(b=>b.addEventListener("click",e=>{
+    e.preventDefault(); e.stopPropagation();
+    const key=b.dataset.day;
+    (S.itemAdded[key]=S.itemAdded[key]||[]).push({aid:Date.now(),sport:"run",label:DEFAULTLABEL.run});
+    save();
+    const openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+    renderPlan(); renderTop(); renderHome();
+    openIds.forEach(x=>{const el2=$("#"+x);if(el2)el2.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+  // Swap a day's workout with another weekday (applies across the whole phase).
+  $$("select[data-pos]",box).forEach(sel=>sel.addEventListener("change",()=>{
+    const pi=+sel.dataset.ph, a=+sel.dataset.pos, b=+sel.value;
+    if(a===b)return;
+    const ord=S.dayOrder[pi]; const tmp=ord[a]; ord[a]=ord[b]; ord[b]=tmp;
+    save();
+    const openIds=$$(".week.open",box).map(e=>e.id), sy=window.scrollY;
+    renderPlan();
+    openIds.forEach(id=>{const e=$("#"+id);if(e)e.classList.add("open");});
+    window.scrollTo(0,sy);
+  }));
+}
+function jumpCurrent(){
+  const cur=currentWeek();$("#phasefilter").value="all";renderPlan();
+  const el=$("#wk"+cur); if(el){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"center"});}
+}
+/* ---------- Quick-log from a plan tile (logs a workout AND checks it off) ---------- */
+let QL={id:"",sport:""};
+function reflectCheck(id){
+  const cb=document.querySelector('.tilecheck[data-k="'+id+'"]');
+  if(cb){cb.checked=true; const t=cb.closest(".tile"); if(t)t.classList.add("done");}
+  const btn=document.querySelector('.logbtn[data-k="'+id+'"]');
+  if(btn){btn.textContent="Edit"; btn.classList.add("edit");}
+  const wn=+id.split("-")[0], w=PLAN.weeks.find(x=>x.n===wn), card=$("#wk"+wn);
+  if(card&&w){const wd=weekDone(w);
+    const dn=card.querySelector(".wprog"); if(dn)dn.outerHTML=donut(wd.pct);
+    const sm=card.querySelector(".whours small"); if(sm)sm.textContent=wd.d+"/"+wd.t+" done";}
+}
+// Show/hide Environment + Elevation fields depending on the chosen sport.
+function syncQlSportFields(sport){
+  const isStrength=sport==="strength";
+  // Strength = time only: hide distance, unit, environment, elevation and effort.
+  $("#ql_distfld").style.display=isStrength?"none":"";
+  $("#ql_unitfld").style.display=isStrength?"none":"";
+  $("#ql_effortfld").style.display=isStrength?"none":"";
+  $("#ql_envfld").style.display=(!isStrength&&["swim","bike","run"].includes(sport))?"":"none";
+  const showElev=!isStrength&&sport!=="swim";
+  $("#ql_elevfld").style.display=showElev?"":"none";
+  $("#ql_elevunitfld").style.display=showElev?"":"none";
+}
+function openQuickLog(id,sport,date,label){
+  QL={id,sport,editId:0};
+  $("#ql_sportfld").style.display="none";          // sport fixed by the plan tile
+  $("#ql_delete").style.display="none";
+  $("#ql_save").textContent="Save & check off \u2713";
+  $("#ql_title").textContent="Log: "+(label||SPORTNAME[sport]||sport);
+  $("#ql_sub").textContent=(SPORTNAME[sport]||sport)+" \u00b7 "+(date?fmtDate(date):"today");
+  $("#ql_date").value=date||todayISO();
+  $("#ql_dur").value="";$("#ql_dist").value="";$("#ql_elev").value="";$("#ql_notes").value="";
+  $("#ql_unit").value=sport==="swim"?"m":"mi";   // swim distance is measured in meters
+  $("#ql_env").value=sport==="swim"?"Indoor":"Outdoor";
+  $("#ql_elevunit").selectedIndex=0;
+  $("#ql_effort").selectedIndex=0;
+  syncQlSportFields(sport);
+  $("#qlog").classList.add("open");
+  setTimeout(()=>{try{$("#ql_dur").focus();}catch(e){}},30);
+}
+function openEditLog(logId){
+  const l=S.logs.find(x=>x.id==logId); if(!l)return;
+  QL={id:"",sport:l.sport,editId:l.id};
+  $("#ql_sportfld").style.display="";              // sport editable here
+  if($("#ql_sport").querySelector('option[value="'+l.sport+'"]'))$("#ql_sport").value=l.sport;
+  $("#ql_delete").style.display="";
+  $("#ql_save").textContent="Save changes \u2713";
+  $("#ql_title").textContent="Edit workout";
+  $("#ql_sub").textContent="Update the details below and save your changes.";
+  $("#ql_date").value=l.date||todayISO();
+  $("#ql_dur").value=l.dur||"";
+  $("#ql_dist").value=l.dist||"";
+  $("#ql_unit").value=l.unit||"mi";
+  $("#ql_env").value=l.env||"Outdoor";
+  $("#ql_elev").value=l.elev||"";
+  $("#ql_elevunit").value=l.elevunit||"ft";
+  const eo=[...$("#ql_effort").options].findIndex(o=>o.value===l.effort);
+  $("#ql_effort").selectedIndex=eo>=0?eo:0;
+  $("#ql_notes").value=l.notes||"";
+  syncQlSportFields(l.sport);
+  $("#qlog").classList.add("open");
+  setTimeout(()=>{try{$("#ql_dur").focus();}catch(e){}},30);
+}
+function closeQuickLog(){$("#qlog").classList.remove("open");}
+function saveQuickLog(){
+  const editing=!!QL.editId;
+  const sport=editing?$("#ql_sport").value:QL.sport;
+  const envSport=["swim","bike","run"].includes(sport);
+  const entry={date:$("#ql_date").value||todayISO(),sport,
+    dur:$("#ql_dur").value?+$("#ql_dur").value:0,
+    dist:$("#ql_dist").value?+$("#ql_dist").value:0,unit:$("#ql_unit").value,
+    env:envSport?$("#ql_env").value:"",
+    elev:(sport!=="swim"&&$("#ql_elev").value)?+$("#ql_elev").value:0,elevunit:$("#ql_elevunit").value,
+    effort:$("#ql_effort").value,notes:$("#ql_notes").value.trim()};
+  if(editing){
+    const i=S.logs.findIndex(x=>x.id==QL.editId);
+    if(i>=0)S.logs[i]=Object.assign({},S.logs[i],entry);
+    save();
+  }else{
+    entry.id=Date.now();
+    entry.planId=QL.id||"";        // tie the log to its plan tile so +Log can edit it later
+    S.logs.push(entry);
+    if(QL.id)S.checks[QL.id]=1;
+    save();
+    if(QL.id)reflectCheck(QL.id);
+  }
+  renderTop();renderHome();
+  closeQuickLog();
+}
+function deleteCurrentLog(){
+  const i=S.logs.findIndex(x=>x.id==QL.editId);
+  if(i<0){closeQuickLog();return;}
+  const pid=S.logs[i].planId;
+  S.logs.splice(i,1);              // remove from the database
+  if(pid)delete S.checks[pid];     // un-check / un-mark the plan tile too
+  save();
+  clearQlForm();                   // empty the form
+  closeQuickLog();
+  const box=$("#weeks"), openIds=$$(".week.open",box).map(x=>x.id), sy=window.scrollY;
+  renderPlan();                    // tile reverts to "+ Log" and unchecked
+  openIds.forEach(x=>{const el=$("#"+x);if(el)el.classList.add("open");});
+  window.scrollTo(0,sy);
+  renderTop();renderHome();        // refresh the dashboard
+}
+function clearQlForm(){
+  $("#ql_dur").value="";$("#ql_dist").value="";$("#ql_elev").value="";$("#ql_notes").value="";
+  $("#ql_date").value=todayISO();
+  $("#ql_unit").value="mi";
+  $("#ql_env").selectedIndex=0;$("#ql_elevunit").selectedIndex=0;$("#ql_effort").selectedIndex=0;
+}
+
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---------- Dashboard (illustrated KPI cards) ---------- */
+const HOME_CARDS=[
+  {key:"swim",sport:"swim",title:"Swim",bar:true},
+  {key:"bike",sport:"bike",title:"Bike",bar:true},
+  {key:"run",sport:"run",title:"Run",bar:true}
+];
+const SWIM_KMH=2.5; // plan stores swim as hours; estimate distance from planned swim time
+const KM2MI=0.621371; // dashboard shows distance in miles by default
+function toKm(dist,unit){if(!dist)return 0;const f={km:1,mi:1.60934,m:0.001,yd:0.0009144};return dist*(f[unit]||0);}
+function toFt(elev,unit){if(!elev)return 0;return unit==="m"?elev*3.28084:elev;}
+function planMi(w,sport){ // plan target distance in miles for the period math
+  if(!w)return 0;
+  if(sport==="bike")return (w.dist&&w.dist.bike_mi)||0;
+  if(sport==="run") return (w.dist&&w.dist.run_mi)||0;
+  if(sport==="swim")return ((w.hours&&w.hours.swim)||0)*SWIM_KMH*KM2MI; // swim estimated from planned time
+  return 0;
+}
+/* dashboard period selection */
+let DASH={mode:"week",week:0,month:""};
+function planMonths(){ // YYYY-MM strings spanned by the plan, in order
+  const out=[]; let d=new Date(PLAN.start+"T00:00:00"); d.setDate(1);
+  const end=new Date(PLAN.race+"T00:00:00");
+  while(d<=end){ out.push(d.toISOString().slice(0,7)); d.setMonth(d.getMonth()+1); }
+  return out;
+}
+function fmtMonth(ym){const d=new Date(ym+"-01T00:00:00");return d.toLocaleDateString(undefined,{month:"short",year:"numeric"});}
+function currentMonth(){const m=todayISO().slice(0,7),list=planMonths();return list.includes(m)?m:list[0];}
+function periodWeeks(){
+  // returns {weeks:[plan-week objs], startISO, endISO, label}
+  if(DASH.mode==="week"){
+    const w=PLAN.weeks.find(x=>x.n===DASH.week)||PLAN.weeks[0];
+    const s=w.weekOf, e=weekEnd(s);
+    return {weeks:[w],startISO:s,endISO:e,label:`Week ${w.n} · ${fmtShort(s)} – ${fmtShort(e)}`};
+  }
+  if(DASH.mode==="month"){
+    const ym=DASH.month||currentMonth();
+    const wk=PLAN.weeks.filter(w=>w.weekOf.slice(0,7)===ym);
+    return {weeks:wk,startISO:ym+"-01",endISO:ym+"-31",label:`${fmtMonth(ym)} · ${wk.length} plan week${wk.length===1?"":"s"}`};
+  }
+  return {weeks:PLAN.weeks,startISO:PLAN.start,endISO:PLAN.race,label:`All 77 weeks · 15 Jun 2026 → 5 Dec 2027`};
+}
+function logInPeriod(l,p){
+  if(DASH.mode==="month")return l.date.slice(0,7)===(DASH.month||currentMonth());
+  if(DASH.mode==="total")return true;
+  return l.date>=p.startISO && l.date<=p.endISO;
+}
+// Which cards have their "more stats" panel expanded (persists across re-renders).
+let MORE_OPEN={swim:false,bike:false,run:false};
+// minutes-per-something → "m:ss"
+function fmtMS(sec){if(!sec||!isFinite(sec)||sec<=0)return "—";let m=Math.floor(sec/60),s=Math.round(sec%60);if(s===60){m++;s=0;}return m+":"+String(s).padStart(2,"0");}
+// minutes → "Xh Ym" / "Z min"
+function fmtDur(min){if(!min||min<=0)return "—";if(min<60)return Math.round(min)+" min";const h=Math.floor(min/60),m=Math.round(min%60);return h+"h"+(m?(" "+m+"m"):"");}
+function renderHome(){
+  const wrap=$("#homecards"); if(!wrap)return;
+  const p=periodWeeks();
+  const weeksN=Math.max(1,p.weeks.length);
+  const monthsN=Math.max(1,new Set(p.weeks.map(w=>w.weekOf.slice(0,7))).size);
+  // planned distance per sport for the period (miles)
+  const plan={swim:0,bike:0,run:0};
+  p.weeks.forEach(w=>{plan.swim+=planMi(w,"swim");plan.bike+=planMi(w,"bike");plan.run+=planMi(w,"run");});
+  // logged stats per sport for the period
+  const agg={};HOME_CARDS.forEach(c=>agg[c.key]={min:0,km:0,kmIn:0,kmOut:0,ft:0,n:0});
+  S.logs.forEach(l=>{
+    const a=agg[l.sport]; if(!a)return; if(!logInPeriod(l,p))return;
+    const km=toKm(+l.dist||0,l.unit);
+    a.min+=(+l.dur||0); a.km+=km; a.ft+=toFt(+l.elev||0,l.elevunit); a.n++;
+    if((l.env||"")==="Indoor") a.kmIn+=km; else a.kmOut+=km;
+  });
+  wrap.innerHTML=HOME_CARDS.map(c=>{
+    const a=agg[c.key];
+    const isSwim=c.key==="swim";
+    const hrs=a.min/60, hrsTxt=hrs>=10?hrs.toFixed(0):hrs.toFixed(1);
+    // Swim distances are shown in meters; bike & run in miles.
+    const dispDist=(km)=>isSwim?Math.round(km*1000).toLocaleString()+" m":((km*KM2MI)<10?(km*KM2MI).toFixed(2):(km*KM2MI).toFixed(1))+" mi";
+    const distTxt=a.km>0?dispDist(a.km):"—";
+    const elevTxt=a.ft>=1?Math.round(a.ft).toLocaleString()+" ft":"—";
+    let bar="";
+    if(c.bar){
+      const plKm=(plan[c.key]||0)/KM2MI, lgKm=a.km, pct=plKm>0?Math.min(100,Math.round(lgKm/plKm*100)):0;
+      bar=plKm>0
+        ? `<div class="distbar">
+             <div class="distbar-top"><span>${dispDist(lgKm)} logged</span><span>${pct}% of plan</span></div>
+             <div class="distbar-track"><div class="distbar-fill" style="width:${pct}%"></div></div>
+             <div class="distbar-foot">Plan distance: <strong>${dispDist(plKm)}</strong>${isSwim?' <span class="est">(est.)</span>':''}</div>
+           </div>`
+        : `<div class="distbar"><div class="distbar-foot">No planned distance for this period.</div></div>`;
+    }
+    const elevKpi=isSwim?"":`<div class="kpi"><div class="kv">${elevTxt}</div><div class="kl">Elevation</div></div>`;
+    const envLine=(!isSwim && a.km>0)
+      ? `<div class="envsplit">Outdoor <strong>${(a.kmOut*KM2MI).toFixed(1)} mi</strong> · Indoor <strong>${(a.kmIn*KM2MI).toFixed(1)} mi</strong></div>`
+      : "";
+    // ----- expandable "more stats": pace + per session / week / month averages -----
+    const perSessKm=a.n?a.km/a.n:0, perSessMin=a.n?a.min/a.n:0;
+    const perWeekKm=a.km/weeksN,  perWeekMin=a.min/weeksN;
+    const perMonthKm=a.km/monthsN,perMonthMin=a.min/monthsN;
+    let paceChips;
+    if(isSwim){
+      const sec100=a.km>0?(a.min*60)/(a.km*10):0;   // a.km*1000m /100 = a.km*10 lengths of 100m
+      paceChips=`<div class="mschip"><div class="mcv">${fmtMS(sec100/4)}</div><div class="mcl">per 25 m</div></div>
+        <div class="mschip"><div class="mcv">${fmtMS(sec100/2)}</div><div class="mcl">per 50 m</div></div>
+        <div class="mschip"><div class="mcv">${fmtMS(sec100)}</div><div class="mcl">per 100 m</div></div>`;
+    }else{
+      const mi=a.km*KM2MI, secMi=mi>0?(a.min*60)/mi:0, mph=a.min>0?mi/(a.min/60):0;
+      paceChips=`<div class="mschip"><div class="mcv">${fmtMS(secMi)}<small> /mi</small></div><div class="mcl">Pace</div></div>
+        <div class="mschip"><div class="mcv">${mph>0?mph.toFixed(1):"—"}<small> mph</small></div><div class="mcl">Avg speed</div></div>`;
+    }
+    const more=a.n>0
+      ? `<div class="mssec">Pace</div>
+         <div class="mschips">${paceChips}</div>
+         <div class="mssec">Averages</div>
+         <div class="mstable">
+           <div class="msr mshdr"><span class="msl"></span><span class="msd">Distance</span><span class="mst">Time</span></div>
+           <div class="msr"><span class="msl">Per session</span><span class="msd">${a.n?dispDist(perSessKm):"—"}</span><span class="mst">${fmtDur(perSessMin)}</span></div>
+           <div class="msr"><span class="msl">Per week</span><span class="msd">${dispDist(perWeekKm)}</span><span class="mst">${fmtDur(perWeekMin)}</span></div>
+           <div class="msr"><span class="msl">Per month</span><span class="msd">${dispDist(perMonthKm)}</span><span class="mst">${fmtDur(perMonthMin)}</span></div>
+         </div>`
+      : `<div class="msempty">Log a ${c.title.toLowerCase()} workout to see pace and averages.</div>`;
+    return `<div class="hcard sport-${c.sport}">
+      <div class="hscene">${sportScene(c.sport)}</div>
+      <div class="hbody">
+        <div class="htitle">${c.title}</div>
+        <div class="kgrid${isSwim?" k3":""}">
+          <div class="kpi"><div class="kv">${hrsTxt}<small>h</small></div><div class="kl">Time</div></div>
+          <div class="kpi"><div class="kv">${distTxt}</div><div class="kl">Distance</div></div>
+          ${elevKpi}
+          <div class="kpi"><div class="kv">${a.n}</div><div class="kl">Sessions</div></div>
+        </div>
+        ${envLine}
+        ${bar}
+        <button type="button" class="morebtn${MORE_OPEN[c.key]?" open":""}" data-k="${c.key}">View more stats <span class="mchev">&#9662;</span></button>
+        <div class="morestats${MORE_OPEN[c.key]?" open":""}" id="more-${c.key}">${more}</div>
+      </div>
+    </div>`;
+  }).join("");
+  $$(".morebtn",wrap).forEach(b=>b.addEventListener("click",()=>{
+    const k=b.dataset.k; MORE_OPEN[k]=!MORE_OPEN[k];
+    const panel=$("#more-"+k); if(panel)panel.classList.toggle("open",MORE_OPEN[k]);
+    b.classList.toggle("open",MORE_OPEN[k]);
+    b.firstChild.textContent=MORE_OPEN[k]?"Hide stats ":"View more stats ";
+  }));
+  const rng=$("#d_range"); if(rng)rng.textContent=p.label;
+  const total=S.logs.length;
+  $("#homenote").textContent=total
+    ? `${total} workout${total>1?"s":""} logged in total · KPIs and bars reflect the period selected above.`
+    : `No workouts logged yet — open the Plan tab and tap “+ Log” on any session to add your first workout and watch these light up.`;
+}
+function populateDashPickers(){
+  const wsel=$("#d_week"); if(wsel&&!wsel.options.length){
+    wsel.innerHTML=PLAN.weeks.map(w=>`<option value="${w.n}">Week ${w.n} · ${fmtShort(w.weekOf)} – ${fmtShort(weekEnd(w.weekOf))}</option>`).join("");
+  }
+  const msel=$("#d_month"); if(msel&&!msel.options.length){
+    msel.innerHTML=planMonths().map(m=>`<option value="${m}">${fmtMonth(m)}</option>`).join("");
+  }
+  if(!DASH.week)DASH.week=currentWeek();
+  if(!DASH.month)DASH.month=currentMonth();
+  if(wsel)wsel.value=DASH.week;
+  if(msel)msel.value=DASH.month;
+}
+function syncDashControls(){
+  $("#d_week").style.display=DASH.mode==="week"?"":"none";
+  $("#d_month").style.display=DASH.mode==="month"?"":"none";
+}
+
+/* ---------- Backup ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="im703_tracker_backup_"+todayISO()+".json";a.click();
+  $("#datamsg").textContent="Exported. Keep this file safe.";
+}
+function importData(file){
+  const fr=new FileReader();
+  fr.onload=()=>{try{const o=JSON.parse(fr.result);S=Object.assign({checks:{},logs:[],tests:{},dayOrder:{},itemOverride:{},itemRemoved:{},itemAdded:{}},o);save();renderAll();$("#datamsg").textContent="Import successful.";}
+    catch(e){$("#datamsg").textContent="Could not read that file.";}};
+  fr.readAsText(file);
+}
+
+/* ---------- wiring ---------- */
+function renderAll(){renderTop();renderPlan();renderHome();}
+/* In-app confirm: first click arms the button, second click within 4s confirms.
+   Used instead of window.confirm(), which is a no-op in some app webviews. */
+function armConfirm(btn,onConfirm,label){
+  if(!btn)return;
+  if(btn._armed){clearTimeout(btn._armed);btn._armed=null;btn.textContent=btn._orig;btn.classList.remove("confirming");onConfirm();return;}
+  btn._orig=btn.textContent;
+  btn.textContent=label||"Click again to confirm";
+  btn.classList.add("confirming");
+  btn._armed=setTimeout(()=>{btn._armed=null;btn.textContent=btn._orig;btn.classList.remove("confirming");},4000);
+}
+$$(".tab").forEach(t=>t.addEventListener("click",()=>{
+  $$(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");
+  $$(".view").forEach(v=>v.classList.remove("active"));$("#"+t.dataset.v).classList.add("active");
+  if(t.dataset.v==="home")renderHome();
+  if(t.dataset.v==="leaderboard")renderLeaderboard();
+}));
+/* ---- Dashboard period controls ---- */
+populateDashPickers();
+syncDashControls();
+$("#d_mode").addEventListener("change",e=>{DASH.mode=e.target.value;syncDashControls();renderHome();});
+$("#d_week").addEventListener("change",e=>{DASH.week=+e.target.value;renderHome();});
+$("#d_month").addEventListener("change",e=>{DASH.month=e.target.value;renderHome();});
+/* ---- Settings gear modal ---- */
+const _modal=$("#settings"),_gear=$("#gear"),_mx=$("#closemodal");
+if(_gear)_gear.addEventListener("click",()=>_modal.classList.add("open"));
+if(_mx)_mx.addEventListener("click",()=>_modal.classList.remove("open"));
+if(_modal)_modal.addEventListener("click",e=>{if(e.target===_modal)_modal.classList.remove("open");});
+/* ---- Quick-log modal wiring ---- */
+const _qlog=$("#qlog");
+$("#ql_save").addEventListener("click",saveQuickLog);
+$("#ql_close").addEventListener("click",closeQuickLog);
+$("#ql_cancel").addEventListener("click",closeQuickLog);
+$("#ql_delete").addEventListener("click",()=>armConfirm($("#ql_delete"),deleteCurrentLog,"Click again to delete"));
+$("#ql_sport").addEventListener("change",e=>syncQlSportFields(e.target.value));
+if(_qlog)_qlog.addEventListener("click",e=>{if(e.target===_qlog)closeQuickLog();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(_modal)_modal.classList.remove("open");if(_qlog)_qlog.classList.remove("open");}});
+$("#phasefilter").addEventListener("change",renderPlan);
+$("#jumpcur").addEventListener("click",jumpCurrent);
+$("#export").addEventListener("click",exportData);
+$("#importbtn").addEventListener("click",()=>$("#importfile").click());
+$("#importfile").addEventListener("change",e=>{if(e.target.files[0])importData(e.target.files[0]);});
+$("#reset").addEventListener("click",()=>armConfirm($("#reset"),()=>{
+  const _un=S.username||"";S=defaultState();S.username=_un;save();renderAll();updateHero();
+  $("#datamsg").textContent="All data cleared.";
+},"Click again to erase everything"));
+/* ---- auth + cloud wiring (passwordless email) ---- */
+const _gsend=$("#gate_send"); if(_gsend)_gsend.addEventListener("click",()=>sendEmailLink(($("#gate_email")||{}).value));
+const _gemail=$("#gate_email"); if(_gemail)_gemail.addEventListener("keydown",e=>{if(e.key==="Enter")sendEmailLink(_gemail.value);});
+const _gresend=$("#gate_resend"); if(_gresend)_gresend.addEventListener("click",()=>sendEmailLink(_pendingEmail||($("#gate_email")||{}).value));
+const _gverify=$("#gate_verify"); if(_gverify)_gverify.addEventListener("click",()=>verifyCode(($("#gate_code")||{}).value));
+const _gcode=$("#gate_code"); if(_gcode){ _gcode.addEventListener("keydown",e=>{if(e.key==="Enter")verifyCode(_gcode.value);}); _gcode.addEventListener("input",()=>{ _gcode.value=_gcode.value.replace(/\D/g,"").slice(0,6); if(_gcode.value.length===6)verifyCode(_gcode.value); }); }
+const _gback=$("#gate_back"); if(_gback)_gback.addEventListener("click",gateBackToEmail);
+const _gtin=$("#gate_tab_signin"); if(_gtin)_gtin.addEventListener("click",()=>toggleGateMode("signin"));
+const _gtup=$("#gate_tab_signup"); if(_gtup)_gtup.addEventListener("click",()=>toggleGateMode("signup"));
+const _belink=$("#btn_emaillink"); if(_belink)_belink.addEventListener("click",async()=>{
+  const ei=$("#acct_email_in"), email=ei?ei.value.trim():"";
+  if(!validEmail(email)){$("#sbmsg").textContent="Enter a valid email above.";return;}
+  if(!sbClient){$("#sbmsg").textContent="Login isn't configured yet.";return;}
+  try{
+    const {error}=await sbClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
+    if(error) throw error;
+    $("#sbmsg").textContent="Sign-in link sent to "+email+". Check your inbox.";
+  }catch(e){ $("#sbmsg").textContent=(e&&e.message)||"Couldn't send the email."; showCloudErr(e); }
+});
+const _gname=$("#gate_name"); if(_gname)_gname.addEventListener("keydown",e=>{if(e.key==="Enter"){const ge=$("#gate_email");if(ge)ge.focus();}});
+const _savename=$("#btn_savename"); if(_savename)_savename.addEventListener("click",()=>{
+  const ni=$("#acct_name"); const v=(ni?ni.value:"").trim().slice(0,24);
+  S.username=v; save(); updateHero(); updateAuthUI();
+  if($("#sbmsg"))$("#sbmsg").textContent=v?("Display name saved."):("Display name cleared.");
+  if(cloudOn())pushLeaderboard();
+});
+const _lbmode=$("#lb_mode"); if(_lbmode)_lbmode.addEventListener("change",renderLeaderboard);
+const _lbref=$("#lb_refresh"); if(_lbref)_lbref.addEventListener("click",renderLeaderboard);
+const _signout=$("#btn_signout"); if(_signout)_signout.addEventListener("click",signOutUser);
+const _btnSync=$("#btn_sync");
+if(_btnSync)_btnSync.addEventListener("click",async()=>{
+  if(!cloudOn()){$("#sbmsg").textContent="Sign in first.";return;}
+  const row=await cloudPull();
+  if(row&&row.data){ S=Object.assign(defaultState(),row.data); renderAll(); $("#sbmsg").textContent="Pulled latest from your account."; }
+  else { cloudPush(); $("#sbmsg").textContent="Saved this device's data to your account."; }
+});
+/* When auth state resolves (or changes), update the UI and load the account's data. */
+function resolveUsername(){
+  const u=authUser(); if(!u)return "";
+  const meta=u.user_metadata||{};
+  let pend=""; try{ pend=localStorage.getItem("im703_pending_name")||""; }catch(_){}
+  const name=(meta.username||meta.name||pend||(u.email?u.email.split("@")[0]:"")||"").toString().trim().slice(0,24);
+  try{ localStorage.removeItem("im703_pending_name"); }catch(_){}
+  return name;
+}
+async function afterAuth(){
+  updateAuthUI();
+  if(authUser()){
+    const resolved=resolveUsername();
+    /* Remember this account so next time the gate opens straight into "Sign in". */
+    try{ const u=authUser(); if(u&&u.email)localStorage.setItem("im703_last_email",u.email); if(resolved)localStorage.setItem("im703_last_name",resolved); }catch(_){}
+    const row=await cloudPull();
+    if(row&&row.data){ S=Object.assign(defaultState(),row.data); }
+    if(resolved && !((S.username||"").trim())) S.username=resolved;
+    save(); renderAll(); updateHero();
+    if(!(row&&row.data)){ cloudPush(); } /* first login for this account \u2013 seed it */
+    else { pushLeaderboard(); }
+  }
+}
+async function boot(){
+  renderAll();
+  setTimeout(()=>{const el=$("#wk"+currentWeek());if(el)el.classList.add("open");},60);
+  if(sbClient){
+    sbClient.auth.onAuthStateChange((event,session)=>{
+      SESSION=session;
+      if(event==="SIGNED_IN"||event==="INITIAL_SESSION"){ afterAuth(); }
+      else if(event==="SIGNED_OUT"){ updateAuthUI(); }
+      else { updateAuthUI(); }
+    });
+  } else {
+    updateAuthUI(); /* library failed to load \u2013 fall back to local-only app */
+  }
+}
+boot();
+
+/* ---- PWA service worker (offline support for the installed app) ---- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
