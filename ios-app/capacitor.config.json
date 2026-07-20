@@ -1,0 +1,12 @@
+{
+  "appId": "com.manas.ironman703tracker",
+  "appName": "70.3 Tracker",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#fdf4ff"
+  },
+  "server": {
+    "iosScheme": "https"
+  }
+}
